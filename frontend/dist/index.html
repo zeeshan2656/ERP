@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="description" content="White-Label Low-Code Business Enterprise Platform" />
+    <link rel="icon" type="image/x-icon" id="dynamic-favicon" href="/favicon.ico" />
+    <title>Enterprise Platform</title>
+
+    <style>
+      html, body, #root {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+
+    <!-- Immediate synchronous restoration before first paint to prevent layout or theme flicker -->
+    <script>
+      (function() {
+        try {
+          var style = localStorage.getItem('app_theme_style') || 'general';
+          var mode = localStorage.getItem('app_theme_mode') || 'light';
+          var density = localStorage.getItem('app_density_mode') || 'comfortable';
+          var zoom = localStorage.getItem('app_zoom_level') || '100';
+
+          if (mode === 'system') {
+            mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+
+          var docEl = document.documentElement;
+          docEl.setAttribute('data-style', style);
+          docEl.setAttribute('data-mode', mode);
+          docEl.setAttribute('data-density', density);
+          docEl.setAttribute('data-theme', style + '_' + mode);
+          docEl.classList.toggle('dark', mode === 'dark');
+          docEl.style.zoom = zoom + '%';
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-aNvOaP9k.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8724KrwD.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

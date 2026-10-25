@@ -1,0 +1,22 @@
+export declare const env: {
+    RESOLVED_MEDIA_PATH: string;
+    ALLOWED_MIME_LIST: string[];
+    CORS_ORIGIN_LIST: string[];
+    PORT: number;
+    NODE_ENV: "development" | "production" | "test";
+    API_PREFIX: string;
+    DB_HOST: string;
+    DB_PORT: number;
+    DB_USER: string;
+    DB_PASSWORD: string;
+    DB_NAME: string;
+    DB_CONNECTION_LIMIT: number;
+    JWT_SECRET: string;
+    JWT_EXPIRES_IN: string;
+    JWT_REFRESH_SECRET: string;
+    JWT_REFRESH_EXPIRES_IN: string;
+    MEDIA_STORAGE_PATH: string;
+    MAX_FILE_SIZE_MB: number;
+    ALLOWED_MIME_TYPES: string;
+    CORS_ORIGIN: string;
+};

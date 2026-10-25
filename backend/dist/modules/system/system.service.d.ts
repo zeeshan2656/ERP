@@ -1,0 +1,73 @@
+import { SetupWizardInput } from './system.schema.js';
+export declare class SystemService {
+    getSetupStatus(): Promise<{
+        isInitialized: boolean;
+    }>;
+    performSetup(input: SetupWizardInput, ipAddress?: string, userAgent?: string): Promise<{
+        success: boolean;
+        message: string;
+        user: {
+            id: string;
+            username: string;
+            email: string;
+            fullName: string;
+            role: string;
+        };
+        accessToken: string;
+        refreshToken: string;
+    }>;
+    getPublicConfig(): Promise<{
+        productName: string;
+        companyName: string;
+        tagline: string;
+        footerText: string;
+        logoLightUrl: string;
+        logoDarkUrl: string;
+        faviconUrl: string;
+        loginBackgroundUrl: string;
+        themeStyle: string;
+        themeMode: string;
+        densityMode: string;
+        appZoom: number;
+        activeTheme: string;
+        allowUserThemeOverride: boolean;
+        fontFamily: string;
+        baseFontSize: string;
+        borderRadius: string;
+        primaryColor: string;
+        accentColor: string;
+        sidebarColor: string;
+        headerColor: string;
+        canvasColor: string;
+        btnSaveColor: string;
+        btnUpdateColor: string;
+        btnCancelColor: string;
+        btnDeleteColor: string;
+        btnSuccessColor: string;
+        btnWarningColor: string;
+        btnInfoColor: string;
+        softUiDistance: string;
+        softUiBlur: string;
+        softUiIntensity: number;
+        softUiLightBg: string;
+        softUiLightShadowDark: string;
+        softUiLightShadowLight: string;
+        softUiDarkBg: string;
+        softUiDarkShadowDark: string;
+        softUiDarkShadowLight: string;
+        radiusGlobal: string;
+        radiusButtons: string;
+        radiusInputs: string;
+        radiusCards: string;
+        radiusSidebar: string;
+        radiusHeader: string;
+        radiusDialogs: string;
+        radiusTables: string;
+        radiusBadges: string;
+        radiusTabs: string;
+        radiusToasts: string;
+        radiusImages: string;
+        radiusControls: string;
+    }>;
+}
+export declare const systemService: SystemService;
