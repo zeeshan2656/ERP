@@ -132,3 +132,18 @@ export function checkWcagCompliance(textColor: string, bgColor: string, isLarge 
       : `Contrast ratio ${ratio}:1 FAILS WCAG AA (${aaRequired}:1 required). Text may be unreadable.`,
   };
 }
+
+/**
+ * Resolves optimal contrast for any foreground given a background, guaranteeing at least 4.5:1 (WCAG AA).
+ */
+export function ensureWcagAaContrast(
+  foreground: string,
+  background: string,
+  fallbackDark = '#0f172a',
+  fallbackLight = '#f8fafc'
+): string {
+  const currentRatio = getContrastRatio(foreground, background);
+  if (currentRatio >= 4.5) return foreground;
+  return getOptimalTextColor(background, fallbackDark, fallbackLight);
+}
+

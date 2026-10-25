@@ -74,15 +74,15 @@
   /* Focus Ring (WCAG Accessible) */
   --focus-ring: 0 0 0 2px var(--surface-0), 0 0 0 4px var(--brand-primary);
 
-  /* Status Colors (Default Base) */
-  --status-success: #15803d;
-  --status-success-bg: rgba(34, 197, 94, 0.15);
-  --status-warning: #b45309;
-  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  /* Status Colors (Default Base - 100% WCAG AA Compliant >= 4.5:1) */
+  --status-success: #166534;
+  --status-success-bg: rgba(34, 197, 94, 0.14);
+  --status-warning: #92400e;
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
   --status-danger: #b91c1c;
-  --status-danger-bg: rgba(239, 68, 68, 0.15);
-  --status-info: #0284c7;
-  --status-info-bg: rgba(56, 189, 248, 0.15);
+  --status-danger-bg: rgba(239, 68, 68, 0.14);
+  --status-info: #0369a1;
+  --status-info-bg: rgba(56, 189, 248, 0.14);
 
   /* Semantic Action Button Tokens (100% WCAG AA Compliant >= 4.5:1) */
   --btn-save-bg: #047857;
@@ -208,13 +208,13 @@
   --join-line-hover: #005a9e;
   --join-line-shadow: rgba(0, 0, 0, 0.15);
 
-  --status-success: #15803d;
+  --status-success: #166534;
   --status-success-bg: rgba(34, 197, 94, 0.14);
-  --status-warning: #b45309;
+  --status-warning: #92400e;
   --status-warning-bg: rgba(245, 158, 11, 0.14);
   --status-danger: #b91c1c;
   --status-danger-bg: rgba(239, 68, 68, 0.14);
-  --status-info: #0284c7;
+  --status-info: #0369a1;
   --status-info-bg: rgba(56, 189, 248, 0.14);
 
   --sidebar-bg: #ffffff;
@@ -381,13 +381,13 @@
   --join-line-hover: #003882;
   --join-line-shadow: rgba(0, 0, 0, 0.15);
 
-  --status-success: #15803d;
+  --status-success: #166534;
   --status-success-bg: rgba(34, 197, 94, 0.14);
-  --status-warning: #b45309;
+  --status-warning: #92400e;
   --status-warning-bg: rgba(245, 158, 11, 0.14);
   --status-danger: #b91c1c;
   --status-danger-bg: rgba(239, 68, 68, 0.14);
-  --status-info: #0284c7;
+  --status-info: #0369a1;
   --status-info-bg: rgba(56, 189, 248, 0.14);
 
   --sidebar-bg: #0f172a;     /* Deep Slate Navy Sidebar */
@@ -535,9 +535,9 @@
 
   --text-primary: #1A202C;   /* 13.8:1 Contrast Ratio (AAA) */
   --text-secondary: #4A5568; /* 6.2:1 Contrast Ratio (AA) */
-  --text-muted: #718096;     /* 4.6:1 Contrast Ratio (AA) */
+  --text-muted: #546274;     /* 5.0:1 Contrast Ratio (WCAG AA) */
   --text-on-accent: #FFFFFF;
-  --text-placeholder: #A0AEC0;
+  --text-placeholder: #718096;
 
   --brand-primary: #2B6CB0;
   --brand-primary-hover: #2C5282;
@@ -559,18 +559,18 @@
   --join-line-hover: #2C5282;
   --join-line-shadow: rgba(209, 217, 230, 0.8);
 
-  --status-success: #15803d;
+  --status-success: #166534;
   --status-success-bg: rgba(34, 197, 94, 0.14);
-  --status-warning: #b45309;
+  --status-warning: #92400e;
   --status-warning-bg: rgba(245, 158, 11, 0.14);
   --status-danger: #b91c1c;
   --status-danger-bg: rgba(239, 68, 68, 0.14);
-  --status-info: #0284c7;
+  --status-info: #0369a1;
   --status-info-bg: rgba(56, 189, 248, 0.14);
 
   --sidebar-bg: var(--soft-bg);
   --sidebar-text: #2D3748;
-  --sidebar-muted: #718096;
+  --sidebar-muted: #546274;
   --sidebar-border: var(--soft-border-fallback);
   --sidebar-active-bg: var(--soft-bg);
   --sidebar-active-text: var(--brand-primary);
@@ -768,9 +768,9 @@
 
   --text-primary: #0f172a;   /* 15.5:1 Contrast (AAA) */
   --text-secondary: #334155; /* 8.5:1 Contrast (AAA) */
-  --text-muted: #64748b;     /* 4.9:1 Contrast (AA) */
+  --text-muted: #475569;     /* 6.9:1 Contrast (WCAG AA) */
   --text-on-accent: #ffffff;
-  --text-placeholder: #94a3b8;
+  --text-placeholder: #64748b;
 
   --brand-primary: #4f46e5;  /* Electric Indigo (WCAG AA 6.2:1) */
   --brand-primary-hover: #4338ca;
@@ -791,18 +791,18 @@
   --join-line-hover: #4338ca;
   --join-line-shadow: rgba(31, 38, 135, 0.12);
 
-  --status-success: #15803d;
+  --status-success: #166534;
   --status-success-bg: rgba(34, 197, 94, 0.14);
-  --status-warning: #b45309;
+  --status-warning: #92400e;
   --status-warning-bg: rgba(245, 158, 11, 0.14);
   --status-danger: #b91c1c;
   --status-danger-bg: rgba(239, 68, 68, 0.14);
-  --status-info: #0284c7;
+  --status-info: #0369a1;
   --status-info-bg: rgba(56, 189, 248, 0.14);
 
   --sidebar-bg: var(--glass-sidebar-bg);
   --sidebar-text: #1e293b;
-  --sidebar-muted: #64748b;
+  --sidebar-muted: #475569;
   --sidebar-border: var(--glass-border);
   --sidebar-active-bg: rgba(79, 70, 229, 0.14);
   --sidebar-active-text: #4f46e5;
@@ -1256,10 +1256,10 @@
   --join-line-stroke: var(--brand-primary);
   --join-line-hover: var(--brand-primary-hover);
 
-  --btn-save-bg: #059669;
-  --btn-save-hover: #047857;
+  --btn-save-bg: #047857;
+  --btn-save-hover: #065f46;
   --btn-save-text: #ffffff;
-  --btn-save-border: #059669;
+  --btn-save-border: #047857;
 
   --btn-update-bg: #2563eb;
   --btn-update-hover: #1d4ed8;
