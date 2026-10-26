@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { runMigrations } from './db/migrator.js';
 import { seedDefaultSampleQueries } from './db/seeds/default-queries.seed.js';
+import { seedDefaultForms } from './db/seeds/default-forms.seed.js';
 import { logger } from './utils/logger.js';
 import { getDbPool } from './config/database.js';
 
@@ -14,6 +15,9 @@ async function bootstrap() {
 
     // 2. Seed default sample queries for Visual Query Builder
     await seedDefaultSampleQueries();
+
+    // 3. Seed default forms for Form Builder
+    await seedDefaultForms();
 
     // 3. Initialize Express application
     const app = createApp();

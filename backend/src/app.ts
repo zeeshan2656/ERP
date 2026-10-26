@@ -19,6 +19,7 @@ import mediaRoutes from './modules/media/media.routes.js';
 import auditRoutes from './modules/audit/audit.routes.js';
 import databaseRoutes from './modules/database/database.routes.js';
 import queriesRoutes from './modules/queries/queries.routes.js';
+import formsRoutes from './modules/forms/forms.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -75,6 +76,7 @@ export function createApp(): Express {
   apiRouter.use('/audit-logs', auditRoutes);
   apiRouter.use('/database', databaseRoutes);
   apiRouter.use('/queries', queriesRoutes);
+  apiRouter.use('/forms', formsRoutes);
 
   app.use(env.API_PREFIX, apiRouter);
 

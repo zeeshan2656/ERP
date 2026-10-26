@@ -20,6 +20,9 @@ import { AuditLogsPage } from './pages/admin/audit/AuditLogsPage.tsx';
 import { DatabaseManagerPage } from './pages/admin/database/DatabaseManagerPage.tsx';
 import { QueryListPage } from './pages/admin/queries/QueryListPage.tsx';
 import { QueryDesignerPage } from './pages/admin/queries/QueryDesignerPage.tsx';
+import { FormListPage } from './pages/admin/forms/FormListPage.tsx';
+import { FormDesignerPage } from './pages/admin/forms/FormDesignerPage.tsx';
+import { FormRuntimePage } from './pages/admin/forms/FormRuntimePage.tsx';
 
 export const App: React.FC = () => {
   return (
@@ -49,6 +52,10 @@ export const App: React.FC = () => {
                   <Route path="queries" element={<QueryListPage />} />
                   <Route path="queries/new" element={<QueryDesignerPage />} />
                   <Route path="queries/:id" element={<QueryDesignerPage />} />
+                  <Route path="forms" element={<FormListPage />} />
+                  <Route path="forms/new" element={<FormDesignerPage />} />
+                  <Route path="forms/designer/:id" element={<FormDesignerPage />} />
+                  <Route path="forms/run/:id" element={<FormRuntimePage />} />
                 </Route>
 
                 {/* Default Redirect */}

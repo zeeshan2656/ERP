@@ -43,11 +43,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             padding: '0 var(--density-padding-x, 14px)',
             fontSize: 'var(--font-size-sm, 14px)',
             fontFamily: 'inherit',
-            color: 'var(--text-primary)',
-            backgroundColor: disabled ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+            color: 'var(--input-text, var(--text-primary))',
+            backgroundColor: disabled ? 'var(--bg-subtle)' : 'var(--input-bg, var(--bg-surface))',
             borderWidth: '1px',
             borderStyle: 'solid',
-            borderColor: error ? 'var(--status-danger)' : 'var(--border-strong)',
+            borderColor: error ? 'var(--status-danger)' : 'var(--input-border, var(--border-strong))',
             borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
             boxShadow: 'var(--soft-inset-sm, none)',
             outline: 'none',
@@ -56,13 +56,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           }}
           onFocus={(e) => {
             if (!error) {
-              e.currentTarget.style.borderColor = 'var(--brand-primary)';
-              e.currentTarget.style.boxShadow = 'var(--soft-inset-sm, none), 0 0 0 1px var(--brand-primary)';
+              e.currentTarget.style.borderColor = 'var(--input-border-focus, var(--brand-primary))';
+              e.currentTarget.style.boxShadow = 'var(--soft-inset-sm, none), var(--input-focus-ring, 0 0 0 2px var(--brand-primary-subtle))';
             }
           }}
           onBlur={(e) => {
             if (!error) {
-              e.currentTarget.style.borderColor = 'var(--border-strong)';
+              e.currentTarget.style.borderColor = 'var(--input-border, var(--border-strong))';
               e.currentTarget.style.boxShadow = 'var(--soft-inset-sm, none)';
             }
           }}

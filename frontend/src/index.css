@@ -165,6 +165,16 @@
   --header-border: var(--border-default);
   --sidebar-active-bg: var(--surface-3);
   --sidebar-active-text: var(--brand-primary);
+
+  /* Centralized Input Control Design Tokens (High-Contrast & WCAG 2.2 AA) */
+  --input-bg: var(--surface-1, #ffffff);
+  --input-text: var(--text-primary, #0f172a);
+  --input-placeholder: var(--text-placeholder, #64748b);
+  --input-border: #64748b;        /* Crisp, visible 4.7:1 contrast on white */
+  --input-border-hover: #334155;  /* High-contrast hover */
+  --input-border-focus: var(--brand-primary, #0067b8);
+  --input-focus-ring: 0 0 0 2px var(--brand-primary-subtle, rgba(0, 103, 184, 0.2));
+  --input-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 /* ==========================================================================
@@ -250,6 +260,15 @@
   --table-filter-badge: #0067b8;
   --table-filter-popup-bg: #ffffff;
   --table-filter-popup-border: #cbd5e1;
+
+  /* Input Controls: High-Contrast Dark Gray Borders on White/Light Surface */
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --input-placeholder: #64748b;
+  --input-border: #64748b;
+  --input-border-hover: #334155;
+  --input-border-focus: #0067b8;
+  --input-focus-ring: 0 0 0 2px rgba(0, 103, 184, 0.2);
 }
 
 /* General + Dark */
@@ -339,6 +358,15 @@
   --table-filter-badge: #38bdf8;
   --table-filter-popup-bg: #1e293b;
   --table-filter-popup-border: #475569;
+
+  /* Input Controls: Clearly Visible Light-Colored Slate Borders on Dark Surface */
+  --input-bg: #1e293b;
+  --input-text: #f8fafc;
+  --input-placeholder: #94a3b8;
+  --input-border: #64748b;
+  --input-border-hover: #94a3b8;
+  --input-border-focus: #38bdf8;
+  --input-focus-ring: 0 0 0 2px rgba(56, 189, 248, 0.25);
 }
 
 /* ==========================================================================
@@ -423,6 +451,15 @@
   --table-filter-badge: #0050aa;
   --table-filter-popup-bg: #ffffff;
   --table-filter-popup-border: #94a3b8;
+
+  /* Input Controls: Enterprise Light High-Contrast */
+  --input-bg: #ffffff;
+  --input-text: #111827;
+  --input-placeholder: #6b7280;
+  --input-border: #64748b;
+  --input-border-hover: #374151;
+  --input-border-focus: #0050aa;
+  --input-focus-ring: 0 0 0 2px rgba(0, 80, 170, 0.2);
 }
 
 /* Enterprise + Dark */
@@ -511,6 +548,15 @@
   --table-filter-badge: #60a5fa;
   --table-filter-popup-bg: #162032;
   --table-filter-popup-border: #3b4e72;
+
+  /* Input Controls: Enterprise Dark Visible Light Slate Border */
+  --input-bg: #162032;
+  --input-text: #f8fafc;
+  --input-placeholder: #94a3b8;
+  --input-border: #64748b;
+  --input-border-hover: #94a3b8;
+  --input-border-focus: #60a5fa;
+  --input-focus-ring: 0 0 0 2px rgba(96, 165, 250, 0.25);
 }
 
 /* ==========================================================================
@@ -607,6 +653,15 @@
   --table-filter-badge: #4f46e5;
   --table-filter-popup-bg: #ecf0f3;
   --table-filter-popup-border: #cbd5e1;
+
+  /* Input Controls: Soft UI Light Tactile High Contrast */
+  --input-bg: #ECF0F3;
+  --input-text: #1A202C;
+  --input-placeholder: #546274;
+  --input-border: #718096;
+  --input-border-hover: #4A5568;
+  --input-border-focus: #2B6CB0;
+  --input-focus-ring: 0 0 0 2px rgba(43, 108, 176, 0.2);
 }
 
 /* Soft UI + Dark */
@@ -707,6 +762,15 @@
   --table-filter-badge: #818cf8;
   --table-filter-popup-bg: #2b2e33;
   --table-filter-popup-border: #42474e;
+
+  /* Input Controls: Soft UI Dark Visible Light Slate Border */
+  --input-bg: #24272B;
+  --input-text: #F7FAFC;
+  --input-placeholder: #A0AEC0;
+  --input-border: #64748b;
+  --input-border-hover: #94a3b8;
+  --input-border-focus: #00E5FF;
+  --input-focus-ring: 0 0 0 2px rgba(0, 229, 255, 0.25);
 }
 
 /* ==========================================================================
@@ -833,6 +897,15 @@
   --table-filter-badge: #4f46e5;
   --table-filter-popup-bg: rgba(255, 255, 255, 0.95);
   --table-filter-popup-border: rgba(255, 255, 255, 0.9);
+
+  /* Input Controls: Glassmorphism Light Visible High-Contrast Border */
+  --input-bg: rgba(255, 255, 255, 0.88);
+  --input-text: #0f172a;
+  --input-placeholder: #64748b;
+  --input-border: #64748b;
+  --input-border-hover: #334155;
+  --input-border-focus: #4f46e5;
+  --input-focus-ring: 0 0 0 2px rgba(79, 70, 229, 0.25);
 }
 
 /* Glassmorphism + Dark (Luminous Deep Obsidian & Crystal) */
@@ -958,6 +1031,15 @@
   --table-filter-badge: #818cf8;
   --table-filter-popup-bg: rgba(26, 36, 58, 0.96);
   --table-filter-popup-border: rgba(255, 255, 255, 0.25);
+
+  /* Input Controls: Glassmorphism Dark Visible Luminous Light Slate Border */
+  --input-bg: rgba(26, 36, 58, 0.72);
+  --input-text: #f8fafc;
+  --input-placeholder: #94a3b8;
+  --input-border: #64748b;
+  --input-border-hover: #94a3b8;
+  --input-border-focus: #818cf8;
+  --input-focus-ring: 0 0 0 2px rgba(129, 140, 248, 0.3);
 }
 
 /* ==========================================================================
@@ -1759,4 +1841,61 @@ textarea:focus-visible,
   outline: 2px solid var(--brand-primary) !important;
   outline-offset: 2px !important;
 }
+
+/* ==========================================================================
+   GLOBAL UNIVERSAL INPUT BORDER & THEME CONTRAST RULES
+   Applies globally across all existing and future modules, forms, dialogs,
+   tables, and input components:
+   - In Light/White Theme: clearly visible dark or light-gray borders (>= 3.0:1)
+   - In Dark Theme: clearly visible light-colored borders suitable for dark backgrounds
+   - Consistent focus & hover states, proper contrast, and readable text
+   ========================================================================== */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="file"]),
+select,
+textarea,
+.form-input,
+.form-select,
+.form-textarea,
+.table-filter-input,
+.table-search-input {
+  background-color: var(--input-bg, var(--surface-1));
+  color: var(--input-text, var(--text-primary));
+  border: 1px solid var(--input-border, #64748b);
+  border-radius: var(--radius-input, var(--radius-sm, 4px));
+  font-family: inherit;
+  transition: border-color var(--transition-fast, 150ms ease), box-shadow var(--transition-fast, 150ms ease);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="file"]):hover,
+select:hover,
+textarea:hover,
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover,
+.table-filter-input:hover,
+.table-search-input:hover {
+  border-color: var(--input-border-hover, #334155);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="color"]):not([type="file"]):focus,
+select:focus,
+textarea:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+.table-filter-input:focus,
+.table-search-input:focus {
+  border-color: var(--input-border-focus, var(--brand-primary)) !important;
+  box-shadow: var(--input-focus-ring, 0 0 0 2px rgba(0, 103, 184, 0.2)) !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--input-placeholder, var(--text-placeholder, #64748b));
+  opacity: 1;
+}
+
 

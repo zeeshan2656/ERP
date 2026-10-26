@@ -18,6 +18,7 @@ import {
   LucideIcon,
   Box,
   GitMerge,
+  LayoutTemplate,
 } from 'lucide-react';
 import { api } from '../../api/client.ts';
 import { useAuth } from '../../context/AuthContext.tsx';
@@ -37,6 +38,7 @@ const iconMap: Record<string, LucideIcon> = {
   Printer,
   LayoutDashboard,
   GitMerge,
+  LayoutTemplate,
 };
 
 export interface SidebarProps {
