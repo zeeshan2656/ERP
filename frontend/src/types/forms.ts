@@ -128,6 +128,7 @@ export interface FormControlStyling {
   readOnlyTextColor?: string;
 
   // Layout & Visibility
+  isHidden?: boolean;
   labelPosition?: 'above' | 'left' | 'right' | 'hidden';
   labelWidth?: string;
   customCss?: string;
@@ -188,6 +189,23 @@ export interface DetailGridColumn {
   precision?: number;
 }
 
+export type SummaryCalculationType = 'SUM' | 'COUNT' | 'AVG' | 'MIN' | 'MAX' | 'FORMULA';
+export type SummaryDisplayFormat = 'currency' | 'number' | 'percentage';
+
+export interface DetailGridSummaryField {
+  id: string;
+  label: string;
+  sourceColumn?: string;
+  calculationType: SummaryCalculationType;
+  formula?: string; // e.g. "SUM(quantity * unit_price)"
+  format?: SummaryDisplayFormat;
+  decimalPlaces?: number;
+  prefix?: string;
+  suffix?: string;
+  targetFieldBinding?: string; // e.g. "total_amount" to sync with master record
+  alignment?: 'left' | 'center' | 'right';
+}
+
 export interface DetailGridConfig {
   detailTable: string;
   foreignKeyColumn: string;
@@ -198,6 +216,9 @@ export interface DetailGridConfig {
   allowEdit?: boolean;
   allowDelete?: boolean;
   defaultPageSize?: number;
+  defaultVisibleRows?: number; // Configurable visible rows in detail grid (default 5)
+  enableTotals?: boolean; // Enable summary / totals section below grid
+  summaryFields?: DetailGridSummaryField[]; // Configured summary fields
   cascadeDelete?: boolean;
 }
 

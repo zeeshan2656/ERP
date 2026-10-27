@@ -153,6 +153,29 @@ export const DEFAULT_SAMPLE_FORMS = [
           allowDelete: true,
           defaultPageSize: 10,
           cascadeDelete: true,
+          defaultVisibleRows: 5,
+          enableTotals: true,
+          summaryFields: [
+            {
+              id: 'sum_qty',
+              label: 'Total Quantity',
+              sourceColumn: 'quantity',
+              calculationType: 'SUM',
+              format: 'number',
+              decimalPlaces: 0,
+              suffix: ' items',
+            },
+            {
+              id: 'sum_total',
+              label: 'Grand Total',
+              sourceColumn: 'line_total',
+              calculationType: 'SUM',
+              format: 'currency',
+              decimalPlaces: 2,
+              prefix: '$',
+              targetFieldBinding: 'total_amount',
+            },
+          ],
         },
       },
     ],
@@ -394,6 +417,21 @@ export async function seedDefaultForms(): Promise<void> {
         ]
       );
       logger.info(`Seeded sample form: ${form.name}`);
+    } else if (form.id === 'f0000000-0000-0000-0000-000000000001') {
+      await query(
+        `UPDATE saved_forms SET
+           canvas_layout = ?,
+           controls = ?,
+           master_detail_config = ?
+         WHERE id = ?`,
+        [
+          JSON.stringify(form.canvas_layout),
+          JSON.stringify(form.controls),
+          form.master_detail_config ? JSON.stringify(form.master_detail_config) : null,
+          form.id,
+        ]
+      );
+      logger.info(`Updated sample form definition: ${form.name}`);
     }
   }
 

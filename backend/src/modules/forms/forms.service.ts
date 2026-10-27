@@ -1257,6 +1257,35 @@ export class FormsService {
         }
       }
 
+      // 3. AUTHORITATIVE MASTER TOTAL RECALCULATION
+      if (Array.isArray(form.controls)) {
+        for (const ctrl of form.controls) {
+          if (ctrl.detailGridConfig && Array.isArray(ctrl.detailGridConfig.summaryFields)) {
+            const config = detailConfigMap.get(ctrl.id);
+            if (!config) continue;
+            for (const sumField of ctrl.detailGridConfig.summaryFields) {
+              if (sumField.targetFieldBinding && sumField.sourceColumn && sumField.calculationType === 'SUM') {
+                const colDef = masterSchema.columns.find((c) => c.name === sumField.targetFieldBinding);
+                if (colDef) {
+                  const quotedDetailTable = this.quoteIdentifier(config.detailTable);
+                  const quotedFk = this.quoteIdentifier(config.foreignKeyColumn);
+                  const quotedSourceCol = this.quoteIdentifier(sumField.sourceColumn);
+                  const [sumRes] = await conn.query<RowDataPacket[]>(
+                    `SELECT COALESCE(SUM(${quotedSourceCol}), 0) AS totalVal FROM ${quotedDetailTable} WHERE ${quotedFk} = ?`,
+                    [finalMasterId]
+                  );
+                  const totalVal = sumRes?.[0]?.totalVal ?? 0;
+                  await conn.query(
+                    `UPDATE ${quotedMasterTable} SET ${this.quoteIdentifier(sumField.targetFieldBinding)} = ? WHERE ${this.quoteIdentifier(pkCol)} = ?`,
+                    [totalVal, finalMasterId]
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+
       return {
         success: true,
         masterId: finalMasterId,

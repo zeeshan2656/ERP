@@ -145,6 +145,20 @@ export function createDefaultControl(type: FormControlType, customLabel?: string
       allowEdit: true,
       allowDelete: true,
       defaultPageSize: 10,
+      defaultVisibleRows: 5,
+      enableTotals: true,
+      summaryFields: [
+        {
+          id: `sum_${Date.now()}_1`,
+          label: 'Grand Total',
+          sourceColumn: 'line_total',
+          calculationType: 'SUM',
+          format: 'currency',
+          decimalPlaces: 2,
+          prefix: '$',
+          targetFieldBinding: 'total_amount',
+        },
+      ],
       cascadeDelete: true,
     };
   }

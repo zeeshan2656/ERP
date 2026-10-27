@@ -2,6 +2,12 @@ import React, { useRef } from 'react';
 import { FormControl, FormCanvasLayout, FormType } from '../../../../types/index.ts';
 import { createDefaultControl } from './designerCatalog.ts';
 import {
+  computeControlStyles,
+  computeLabelStyles,
+  computeSectionStyles,
+  computeButtonStyles,
+} from '../../../../utils/formStyling.ts';
+import {
   Copy,
   Trash2,
   GripHorizontal,
@@ -17,6 +23,7 @@ import {
   Upload,
   Play,
   Calculator,
+  EyeOff,
 } from 'lucide-react';
 
 export interface DesignerCanvasProps {
@@ -88,6 +95,11 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
   // Render individual control in designer mode
   const renderControlMock = (ctrl: FormControl) => {
     const isSelected = ctrl.id === selectedControlId;
+    const isHidden = ctrl.styling?.isHidden;
+    const controlStyles = computeControlStyles(ctrl);
+    const labelStyles = computeLabelStyles(ctrl);
+    const sectionStyles = computeSectionStyles(ctrl);
+    const buttonStyles = computeButtonStyles(ctrl);
 
     return (
       <div
@@ -106,6 +118,7 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
           boxShadow: isSelected ? '0 0 0 3px rgba(0, 103, 184, 0.15)' : 'none',
           transition: 'all 0.15s ease',
           cursor: 'pointer',
+          opacity: isHidden ? 0.6 : 1,
         }}
       >
         {/* Selection Mini Toolbar */}
@@ -180,21 +193,39 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
           </div>
         )}
 
+        {/* Hidden pill indicator in designer */}
+        {isHidden && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 700, color: 'var(--status-warning-text, #b45309)', backgroundColor: 'var(--surface-2, rgba(245,158,11,0.1))', padding: '1px 5px', borderRadius: '3px', marginBottom: '4px' }}>
+            <EyeOff size={10} /> Hidden at Runtime
+          </div>
+        )}
+
         {/* Control Content Mockup */}
         {ctrl.type === 'section' ? (
-          <div style={{ borderBottom: '2px solid var(--border-subtle)', paddingBottom: '6px', marginBottom: '4px' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+          <div style={sectionStyles.containerStyle}>
+            <h3 style={sectionStyles.headingStyle}>
               {ctrl.label || 'Section Header'}
             </h3>
           </div>
         ) : ctrl.type === 'heading' ? (
-          <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '4px 0', color: 'var(--text-primary)' }}>
+          <h2
+            style={{
+              fontSize: ctrl.styling?.fontSize || '16px',
+              fontWeight: ctrl.styling?.isBold ? 800 : ctrl.styling?.fontWeight ? ctrl.styling.fontWeight : 700,
+              fontStyle: ctrl.styling?.isItalic ? 'italic' : 'normal',
+              textDecoration: ctrl.styling?.isUnderline ? 'underline' : 'none',
+              margin: '4px 0',
+              color: ctrl.styling?.textColor || 'var(--text-primary)',
+              fontFamily: ctrl.styling?.fontFamily || 'inherit',
+              textAlign: ctrl.styling?.textAlign || 'left',
+            }}
+          >
             {ctrl.label || 'Heading'}
           </h2>
         ) : ctrl.type === 'divider' ? (
           <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: '8px 0' }} />
         ) : ctrl.type === 'spacer' ? (
-          <div style={{ height: ctrl.height || '24px', backgroundColor: 'var(--surface-2)', borderRadius: '3px', opacity: 0.4 }} />
+          <div style={{ height: ctrl.height || ctrl.styling?.height || '24px', backgroundColor: 'var(--surface-2)', borderRadius: '3px', opacity: 0.4 }} />
         ) : ctrl.type === 'datagrid' || ctrl.type === 'master_detail' ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -227,25 +258,25 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
             {/* Table Mockup */}
             <div
               style={{
-                borderRadius: '4px',
-                border: '1px solid var(--border-subtle)',
+                borderRadius: ctrl.styling?.borderRadius || '4px',
+                border: ctrl.styling?.borderColor ? `${ctrl.styling?.borderWidth || '1px'} ${ctrl.styling?.borderStyle || 'solid'} ${ctrl.styling?.borderColor}` : '1px solid var(--border-subtle)',
                 overflow: 'hidden',
-                fontSize: '12px',
+                fontSize: ctrl.styling?.fontSize || '12px',
               }}
             >
               <div
                 style={{
                   display: 'flex',
-                  backgroundColor: 'var(--surface-2, rgba(0,0,0,0.04))',
+                  backgroundColor: ctrl.styling?.gridHeaderBg || 'var(--surface-2, rgba(0,0,0,0.04))',
                   fontWeight: 600,
-                  padding: '6px 10px',
-                  color: 'var(--text-secondary)',
+                  padding: ctrl.styling?.gridCellPadding === 'compact' ? '4px 8px' : ctrl.styling?.gridCellPadding === 'spacious' ? '10px 14px' : '6px 10px',
+                  color: ctrl.styling?.gridHeaderTextColor || 'var(--text-secondary)',
                   borderBottom: '1px solid var(--border-subtle)',
                 }}
               >
                 {(ctrl.detailGridConfig?.columns && ctrl.detailGridConfig.columns.length > 0) ? (
                   ctrl.detailGridConfig.columns.map((c) => (
-                    <div key={c.field} style={{ flex: 1, minWidth: c.width || '100px' }}>
+                    <div key={c.field} style={{ flex: c.width === 'auto' ? 2 : 1, minWidth: c.width || '100px' }}>
                       {c.label || c.field}
                     </div>
                   ))
@@ -261,28 +292,88 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
                 <div style={{ width: '50px', textAlign: 'right' }}>Actions</div>
               </div>
 
-              <div style={{ padding: '8px 10px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '11px' }}>
-                Master-Detail Grid: child rows load dynamically when master record is selected.
-              </div>
+              {/* Render configured Default Visible Rows in Canvas Mockup */}
+              {Array.from({ length: Math.min(10, Math.max(1, ctrl.detailGridConfig?.defaultVisibleRows || 5)) }).map((_, rIdx) => (
+                <div
+                  key={rIdx}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: ctrl.styling?.gridCellPadding === 'compact' ? '3px 8px' : ctrl.styling?.gridCellPadding === 'spacious' ? '8px 12px' : '5px 10px',
+                    borderBottom: '1px solid var(--border-subtle, rgba(0,0,0,0.05))',
+                    backgroundColor: ctrl.styling?.gridRowStriped && rIdx % 2 === 1 ? 'var(--surface-1, rgba(0,0,0,0.02))' : 'transparent',
+                    fontSize: '11px',
+                    color: 'var(--text-muted)',
+                  }}
+                >
+                  {(ctrl.detailGridConfig?.columns && ctrl.detailGridConfig.columns.length > 0) ? (
+                    ctrl.detailGridConfig.columns.map((c) => (
+                      <div key={c.field} style={{ flex: c.width === 'auto' ? 2 : 1, minWidth: c.width || '100px', opacity: 0.6 }}>
+                        {c.type === 'currency' ? '$0.00' : c.type === 'number' ? '0' : `Row ${rIdx + 1} ${c.label}`}
+                      </div>
+                    ))
+                  ) : (
+                    <>
+                      <div style={{ flex: 2, opacity: 0.6 }}>Item #{rIdx + 1}</div>
+                      <div style={{ flex: 1, opacity: 0.6 }}>SKU-00{rIdx + 1}</div>
+                      <div style={{ flex: 1, opacity: 0.6 }}>1</div>
+                      <div style={{ flex: 1, opacity: 0.6 }}>$0.00</div>
+                      <div style={{ flex: 1, opacity: 0.6 }}>$0.00</div>
+                    </>
+                  )}
+                  <div style={{ width: '50px', textAlign: 'right', opacity: 0.4 }}>—</div>
+                </div>
+              ))}
+
+              {/* Summary / Totals Bar in Canvas Mockup */}
+              {ctrl.detailGridConfig?.enableTotals && (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                    padding: '8px 12px',
+                    backgroundColor: 'var(--surface-2, rgba(0,0,0,0.03))',
+                    borderTop: '1px solid var(--border-subtle)',
+                  }}
+                >
+                  {ctrl.detailGridConfig.summaryFields && ctrl.detailGridConfig.summaryFields.length > 0 ? (
+                    ctrl.detailGridConfig.summaryFields.map((field) => (
+                      <div
+                        key={field.id}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          borderRadius: '4px',
+                          backgroundColor: 'var(--surface-0, #ffffff)',
+                          border: '1px solid var(--border-subtle)',
+                          fontSize: '11px',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{field.label}:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--brand-primary)' }}>
+                          {field.prefix || (field.format === 'currency' ? '$' : '')}0.00{field.suffix || ''}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      Totals: Enabled
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ) : ctrl.type === 'button' ? (
           <div style={{ display: 'flex', justifyContent: ctrl.alignment || 'flex-start' }}>
             <button
               type="button"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 600,
-                borderRadius: '4px',
-                border: 'none',
-                backgroundColor: 'var(--brand-primary, #0067b8)',
-                color: '#ffffff',
-                cursor: 'pointer',
-              }}
+              style={buttonStyles}
             >
               <Play size={12} />
               <span>{ctrl.label || 'Action Button'}</span>
@@ -290,7 +381,7 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
           </div>
         ) : ctrl.type === 'switch' ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <span style={labelStyles}>
               {ctrl.label}
               {ctrl.validation?.required && <span style={{ color: 'red' }}> *</span>}
             </span>
@@ -327,7 +418,7 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
                 backgroundColor: 'var(--surface-0)',
               }}
             />
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <span style={labelStyles}>
               {ctrl.label}
               {ctrl.validation?.required && <span style={{ color: 'red' }}> *</span>}
             </span>
@@ -335,15 +426,7 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
         ) : (
           <div>
             {ctrl.styling?.labelPosition !== 'hidden' && (
-              <label
-                style={{
-                  display: 'block',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  marginBottom: '4px',
-                  color: 'var(--text-primary)',
-                }}
-              >
+              <label style={labelStyles}>
                 {ctrl.label}
                 {ctrl.validation?.required && <span style={{ color: 'var(--status-danger-text, #ef4444)' }}> *</span>}
                 {ctrl.fieldBinding && (
@@ -358,13 +441,7 @@ export const DesignerCanvas: React.FC<DesignerCanvasProps> = ({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '6px 10px',
-                borderRadius: 'var(--radius-sm, 4px)',
-                border: '1px solid var(--border-subtle, #cbd5e1)',
-                backgroundColor: 'var(--surface-0, #ffffff)',
-                color: 'var(--text-muted)',
-                fontSize: '12px',
-                minHeight: ctrl.type === 'textarea' ? '60px' : '30px',
+                ...controlStyles,
               }}
             >
               {ctrl.type === 'date' ? (

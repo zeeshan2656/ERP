@@ -164,8 +164,12 @@ export const FormControlSchema = z.object({
       allowEdit: z.boolean().optional().default(true),
       allowDelete: z.boolean().optional().default(true),
       defaultPageSize: z.number().optional().default(10),
+      defaultVisibleRows: z.number().optional().default(5),
+      enableTotals: z.boolean().optional().default(false),
+      summaryFields: z.array(z.any()).optional().default([]),
       cascadeDelete: z.boolean().optional().default(true),
     })
+    .passthrough()
     .optional(),
   buttonAction: z
     .object({

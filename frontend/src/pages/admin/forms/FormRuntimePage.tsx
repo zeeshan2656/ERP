@@ -9,7 +9,23 @@ import {
   FormRecordResult,
   SingleRecordDetailsResult,
   LookupItem,
+  DetailGridColumn,
+  DetailGridSummaryField,
 } from '../../../types/index.ts';
+import {
+  calculateSummaryFieldValue,
+  computeGridTotals,
+} from '../../../utils/formCalculations.ts';
+import {
+  computeControlStyles,
+  computeLabelStyles,
+  computeSectionStyles,
+  computeButtonStyles,
+} from '../../../utils/formStyling.ts';
+import {
+  useFormEnterNavigation,
+  handleDetailGridEnterNavigation,
+} from '../../../hooks/useFormEnterNavigation.ts';
 import { AdminLayoutOutletContext } from '../../../components/layout/AdminLayout.tsx';
 import { useToast } from '../../../components/ui/Toast.tsx';
 import { Button } from '../../../components/ui/Button.tsx';
@@ -42,6 +58,14 @@ import {
   LayoutTemplate,
 } from 'lucide-react';
 
+const DEFAULT_DETAIL_GRID_COLUMNS: DetailGridColumn[] = [
+  { field: 'item_name', label: 'Item Name', width: 'auto', editable: true },
+  { field: 'sku', label: 'SKU', width: '140px', editable: true },
+  { field: 'quantity', label: 'Qty', width: '90px', type: 'number', editable: true },
+  { field: 'unit_price', label: 'Unit Price ($)', width: '130px', type: 'currency', editable: true },
+  { field: 'line_total', label: 'Line Total ($)', width: '140px', type: 'currency', editable: false },
+];
+
 export const FormRuntimePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
@@ -61,6 +85,17 @@ export const FormRuntimePage: React.FC = () => {
   // Full-Screen State (Default on if URL query or layout context is fullscreen)
   const [isFullScreen, setIsFullScreen] = useState<boolean>(() => {
     return isFsFromUrl || Boolean(isLayoutFullScreen);
+  });
+
+  // Dedicated container ref for Enter-Key Navigation across all data-entry forms
+  const runtimeFormContainerRef = useRef<HTMLDivElement>(null);
+
+  useFormEnterNavigation({
+    containerRef: runtimeFormContainerRef,
+    enabled: Boolean(form && !isLoadingForm),
+    onShowValidationToast: (msg) => {
+      showToastRef.current(msg, 'error');
+    },
   });
 
   // Keep a stable ref for toast notifications to avoid triggering effect re-runs
@@ -174,20 +209,93 @@ export const FormRuntimePage: React.FC = () => {
   const currentRecordPkVal = currentRecord?.[primaryKeyCol];
   const lastLoadedPkRef = useRef<any>(null);
 
+  // Helper to create configured number of default visible blank rows for data entry
+  const createDefaultBlankRows = useCallback((gridCtrl: FormControl): any[] => {
+    const defaultCount = Math.max(1, gridCtrl.detailGridConfig?.defaultVisibleRows || 5);
+    const cols: DetailGridColumn[] =
+      gridCtrl.detailGridConfig?.columns && gridCtrl.detailGridConfig.columns.length > 0
+        ? gridCtrl.detailGridConfig.columns
+        : DEFAULT_DETAIL_GRID_COLUMNS;
+
+    const rows: any[] = [];
+    for (let i = 0; i < defaultCount; i++) {
+      const row: Record<string, any> = {
+        _tempId: `blank_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+        _isNew: true,
+      };
+      cols.forEach((c) => {
+        row[c.field] = c.type === 'number' ? 0 : c.type === 'currency' ? 0.0 : '';
+      });
+      rows.push(row);
+    }
+    return rows;
+  }, []);
+
+  // Sync configured summary totals to master record fields (e.g. total_amount)
+  const syncSummaryTotalsToMaster = useCallback(
+    (currentDetails: Record<string, any[]>) => {
+      if (!form?.controls) return;
+      const updates: Record<string, any> = {};
+
+      form.controls.forEach((ctrl) => {
+        if ((ctrl.type === 'datagrid' || ctrl.type === 'master_detail') && ctrl.detailGridConfig) {
+          const rows = currentDetails[ctrl.id] || [];
+
+          // Map summary fields that specify targetFieldBinding
+          if (ctrl.detailGridConfig.summaryFields && ctrl.detailGridConfig.summaryFields.length > 0) {
+            ctrl.detailGridConfig.summaryFields.forEach((sf) => {
+              if (sf.targetFieldBinding) {
+                const res = calculateSummaryFieldValue(rows, sf);
+                updates[sf.targetFieldBinding] = res.rawValue;
+              }
+            });
+          }
+
+          // Fallback mapping for total_amount if present in master form controls and not explicitly mapped
+          if (
+            form.controls.some((c) => (c.fieldBinding || c.name) === 'total_amount') &&
+            updates.total_amount === undefined
+          ) {
+            const grandTotal = rows.reduce((sum, item) => sum + (Number(item.line_total) || 0), 0);
+            updates.total_amount = grandTotal.toFixed(2);
+          }
+        }
+      });
+
+      if (Object.keys(updates).length > 0) {
+        setActiveRecord((prev) => ({ ...prev, ...updates }));
+      }
+    },
+    [form]
+  );
+
   const loadActiveRecordDetails = useCallback(
     async (recordId: string | number) => {
       if (!id) return;
       try {
         const detailsRes: SingleRecordDetailsResult = await formsApi.getRecordWithDetails(id, recordId);
+        const loadedDetails = detailsRes.details || {};
+
+        // If detail grid has 0 rows, initialize configured defaultVisibleRows blank rows
+        form?.controls.forEach((ctrl) => {
+          if (ctrl.type === 'datagrid' || ctrl.type === 'master_detail') {
+            const existingRows = loadedDetails[ctrl.id] || [];
+            if (existingRows.length === 0) {
+              loadedDetails[ctrl.id] = createDefaultBlankRows(ctrl);
+            }
+          }
+        });
+
         setActiveRecord(detailsRes.master || {});
-        setActiveDetails(detailsRes.details || {});
+        setActiveDetails(loadedDetails);
         setDeletedDetailIds({});
         setIsNewRecord(false);
+        syncSummaryTotalsToMaster(loadedDetails);
       } catch (err: any) {
         showToastRef.current(err.message || 'Failed to load record details', 'error');
       }
     },
-    [id]
+    [id, form, createDefaultBlankRows, syncSummaryTotalsToMaster]
   );
 
   useEffect(() => {
@@ -200,10 +308,17 @@ export const FormRuntimePage: React.FC = () => {
       } else {
         lastLoadedPkRef.current = null;
         setActiveRecord(currentRecord);
-        setActiveDetails({});
+        const initialDetails: Record<string, any[]> = {};
+        form?.controls.forEach((ctrl) => {
+          if (ctrl.type === 'datagrid' || ctrl.type === 'master_detail') {
+            initialDetails[ctrl.id] = createDefaultBlankRows(ctrl);
+          }
+        });
+        setActiveDetails(initialDetails);
+        syncSummaryTotalsToMaster(initialDetails);
       }
     }
-  }, [currentRecord, currentRecordPkVal, loadActiveRecordDetails]);
+  }, [currentRecord, currentRecordPkVal, loadActiveRecordDetails, form, createDefaultBlankRows, syncSummaryTotalsToMaster]);
 
   // 4. Fetch Lookup Data for any Lookup / LOV Controls (deduplicated by form controls key)
   const formControlsKey = useMemo(() => {
@@ -284,7 +399,7 @@ export const FormRuntimePage: React.FC = () => {
   const handleLastRecord = () => setCurrentRecordIndex(records.length - 1);
 
   // New Record action
-  const handleNewRecord = () => {
+  const handleNewRecord = useCallback(() => {
     setIsNewRecord(true);
     const blank: Record<string, any> = {};
     form?.controls.forEach((c) => {
@@ -293,10 +408,19 @@ export const FormRuntimePage: React.FC = () => {
         blank[key] = c.defaultValue;
       }
     });
+
+    const blankDetails: Record<string, any[]> = {};
+    form?.controls.forEach((ctrl) => {
+      if (ctrl.type === 'datagrid' || ctrl.type === 'master_detail') {
+        blankDetails[ctrl.id] = createDefaultBlankRows(ctrl);
+      }
+    });
+
     setActiveRecord(blank);
-    setActiveDetails({});
+    setActiveDetails(blankDetails);
     setDeletedDetailIds({});
-  };
+    syncSummaryTotalsToMaster(blankDetails);
+  }, [form, createDefaultBlankRows, syncSummaryTotalsToMaster]);
 
   // Master Field Change with Dependent Field Auto-population
   const handleMasterFieldChange = (field: string, val: any, ctrl?: FormControl) => {
@@ -322,14 +446,18 @@ export const FormRuntimePage: React.FC = () => {
 
   // Detail Row Changes
   const handleAddDetailRow = (gridId: string, defaultCols: any[]) => {
-    const newRow: Record<string, any> = { _tempId: Date.now(), _isNew: true };
+    const newRow: Record<string, any> = { _tempId: `new_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`, _isNew: true, _isDirty: true };
     defaultCols.forEach((col) => {
-      newRow[col.field] = col.type === 'number' ? 1 : col.type === 'currency' ? 0.0 : '';
+      newRow[col.field] = col.type === 'number' ? 0 : col.type === 'currency' ? 0.0 : '';
     });
-    setActiveDetails((prev) => ({
-      ...prev,
-      [gridId]: [...(prev[gridId] || []), newRow],
-    }));
+    setActiveDetails((prev) => {
+      const updated = {
+        ...prev,
+        [gridId]: [...(prev[gridId] || []), newRow],
+      };
+      syncSummaryTotalsToMaster(updated);
+      return updated;
+    });
   };
 
   const handleRemoveDetailRow = (gridId: string, index: number, row: any) => {
@@ -340,10 +468,15 @@ export const FormRuntimePage: React.FC = () => {
         [gridId]: [...(prev[gridId] || []), pk],
       }));
     }
-    setActiveDetails((prev) => ({
-      ...prev,
-      [gridId]: (prev[gridId] || []).filter((_, i) => i !== index),
-    }));
+    setActiveDetails((prev) => {
+      const updatedRows = (prev[gridId] || []).filter((_, i) => i !== index);
+      const updated = {
+        ...prev,
+        [gridId]: updatedRows,
+      };
+      syncSummaryTotalsToMaster(updated);
+      return updated;
+    });
   };
 
   const handleDetailCellChange = (gridId: string, index: number, field: string, val: any) => {
@@ -352,21 +485,18 @@ export const FormRuntimePage: React.FC = () => {
       if (current[index]) {
         current[index] = { ...current[index], [field]: val, _isDirty: true };
 
-        // Auto-calculate line total if quantity and unit price are edited
-        if (field === 'quantity' || field === 'unit_price') {
+        // Auto-calculate line total if quantity, unit price, or discount is edited
+        if (field === 'quantity' || field === 'unit_price' || field === 'discount') {
           const qty = Number(current[index].quantity) || 0;
           const price = Number(current[index].unit_price) || 0;
-          current[index].line_total = (qty * price).toFixed(2);
+          const discount = Number(current[index].discount) || 0;
+          current[index].line_total = Math.max(0, (qty * price) - discount).toFixed(2);
         }
       }
 
-      // Recompute Master Total Amount if line totals changed
-      if (form?.controls.some((c) => c.fieldBinding === 'total_amount')) {
-        const grandTotal = current.reduce((sum, item) => sum + (Number(item.line_total) || 0), 0);
-        setActiveRecord((m) => ({ ...m, total_amount: grandTotal.toFixed(2) }));
-      }
-
-      return { ...prev, [gridId]: current };
+      const updated = { ...prev, [gridId]: current };
+      syncSummaryTotalsToMaster(updated);
+      return updated;
     });
   };
 
@@ -378,11 +508,27 @@ export const FormRuntimePage: React.FC = () => {
       const pkCol = form.sourceSchema?.primaryKey || 'id';
       const masterRecordId = isNewRecord ? undefined : activeRecord[pkCol];
 
-      // Prepare detail changes
+      // Prepare detail changes (filter out untouched blank rows)
       const detailsPayload: Record<string, any> = {};
 
       Object.entries(activeDetails).forEach(([gridId, rows]) => {
-        const inserted = rows.filter((r) => r._isNew);
+        const ctrl = form.controls.find((c) => c.id === gridId);
+        const cols = ctrl?.detailGridConfig?.columns || [];
+
+        const hasEnteredData = (r: any) =>
+          cols.some((c) => {
+            const val = r[c.field];
+            return (
+              val !== undefined &&
+              val !== null &&
+              String(val).trim() !== '' &&
+              val !== 0 &&
+              val !== '0' &&
+              val !== '0.00'
+            );
+          });
+
+        const inserted = rows.filter((r) => r._isNew && (r._isDirty || hasEnteredData(r)));
         const updated = rows.filter((r) => !r._isNew && r._isDirty);
         const deleted = deletedDetailIds[gridId] || [];
 
@@ -830,16 +976,23 @@ export const FormRuntimePage: React.FC = () => {
         {/* A. RECORD CANVAS FORM (Single, Full-Screen, Dialog, Readonly) */}
         {isRecordCanvasForm && (
           <div
+            ref={runtimeFormContainerRef}
+            className="apex-form-canvas-container"
             style={{
-              width: inFullScreen ? '100%' : (form.canvasLayout.width || '100%'),
-              maxWidth: inFullScreen ? 'none' : '1040px',
+              width: '100%',
+              maxWidth: inFullScreen ? 'none' : (form.canvasLayout.width && form.canvasLayout.width !== '100%' ? form.canvasLayout.width : '100%'),
               backgroundColor: 'var(--bg-surface, #ffffff)',
               borderRadius: 'var(--radius-md, 6px)',
               border: '1px solid var(--border-default, #cbd5e1)',
-              padding: form.canvasLayout.padding || (inFullScreen ? '28px 32px' : '24px'),
+              padding: form.canvasLayout.padding || (inFullScreen ? '20px 24px' : '24px'),
               boxShadow: inFullScreen ? '0 4px 16px rgba(0,0,0,0.06)' : '0 1px 3px rgba(0,0,0,0.05)',
               alignSelf: inFullScreen ? 'stretch' : 'flex-start',
               boxSizing: 'border-box',
+              minWidth: 0,
+              flex: inFullScreen ? 1 : undefined,
+              minHeight: inFullScreen ? '100%' : undefined,
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {form.controls.length === 0 ? (
@@ -862,30 +1015,43 @@ export const FormRuntimePage: React.FC = () => {
               </div>
             ) : (
               <div
+                className="apex-form-grid"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(12, 1fr)',
+                  gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
                   gap: `${form.canvasLayout.gap ?? 16}px`,
                   width: '100%',
+                  minWidth: 0,
+                  flex: inFullScreen ? 1 : undefined,
                 }}
               >
                 {form.controls.map((ctrl) => {
+                  if (ctrl.styling?.isHidden) return null;
+
                   const colSpan = Math.min(12, Math.max(1, ctrl.colSpan || 6));
                   const fieldKey = ctrl.fieldBinding || ctrl.name;
                   const val = activeRecord[fieldKey] ?? '';
+                  const controlStyles = computeControlStyles(ctrl, {
+                    isDisabled: ctrl.disabled,
+                    isReadOnly: ctrl.readOnly,
+                  });
+                  const labelStyles = computeLabelStyles(ctrl);
+                  const sectionStyles = computeSectionStyles(ctrl);
+                  const buttonStyles = computeButtonStyles(ctrl, {
+                    isDisabled: ctrl.disabled,
+                  });
 
                   if (ctrl.type === 'section') {
                     return (
                       <div
                         key={ctrl.id}
+                        className={`apex-grid-col-${colSpan}`}
                         style={{
                           gridColumn: `span ${colSpan}`,
-                          borderBottom: '2px solid var(--border-default, #cbd5e1)',
-                          paddingBottom: '6px',
-                          marginTop: '8px',
+                          ...sectionStyles.containerStyle,
                         }}
                       >
-                        <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                        <h3 style={sectionStyles.headingStyle}>
                           {ctrl.label}
                         </h3>
                       </div>
@@ -894,8 +1060,19 @@ export const FormRuntimePage: React.FC = () => {
 
                   if (ctrl.type === 'heading') {
                     return (
-                      <div key={ctrl.id} style={{ gridColumn: `span ${colSpan}` }}>
-                        <h2 style={{ fontSize: '16px', fontWeight: 700, margin: '6px 0', color: 'var(--text-primary)' }}>
+                      <div key={ctrl.id} className={`apex-grid-col-${colSpan}`} style={{ gridColumn: `span ${colSpan}` }}>
+                        <h2
+                          style={{
+                            fontSize: ctrl.styling?.fontSize || '16px',
+                            fontWeight: ctrl.styling?.isBold ? 800 : ctrl.styling?.fontWeight ? ctrl.styling.fontWeight : 700,
+                            fontStyle: ctrl.styling?.isItalic ? 'italic' : 'normal',
+                            textDecoration: ctrl.styling?.isUnderline ? 'underline' : 'none',
+                            margin: '6px 0',
+                            color: ctrl.styling?.textColor || 'var(--text-primary)',
+                            fontFamily: ctrl.styling?.fontFamily || 'inherit',
+                            textAlign: ctrl.styling?.textAlign || 'left',
+                          }}
+                        >
                           {ctrl.label}
                         </h2>
                       </div>
@@ -904,7 +1081,7 @@ export const FormRuntimePage: React.FC = () => {
 
                   if (ctrl.type === 'divider') {
                     return (
-                      <div key={ctrl.id} style={{ gridColumn: `span ${colSpan}` }}>
+                      <div key={ctrl.id} className={`apex-grid-col-${colSpan}`} style={{ gridColumn: `span ${colSpan}` }}>
                         <hr style={{ border: 'none', borderTop: '1px solid var(--border-default, #cbd5e1)', margin: '8px 0' }} />
                       </div>
                     );
@@ -912,10 +1089,10 @@ export const FormRuntimePage: React.FC = () => {
 
                   if (ctrl.type === 'button') {
                     return (
-                      <div key={ctrl.id} style={{ gridColumn: `span ${colSpan}`, display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
-                        <Button
-                          variant="primary"
-                          size="md"
+                      <div key={ctrl.id} className={`apex-grid-col-${colSpan}`} style={{ gridColumn: `span ${colSpan}`, display: 'flex', alignItems: 'flex-end', paddingBottom: '2px' }}>
+                        <button
+                          type={ctrl.buttonAction?.actionType === 'submit' ? 'submit' : 'button'}
+                          style={buttonStyles}
                           onClick={() => {
                             if (ctrl.buttonAction?.actionType === 'submit') {
                               handleSaveRecord();
@@ -925,7 +1102,7 @@ export const FormRuntimePage: React.FC = () => {
                           }}
                         >
                           {ctrl.label || 'Action Button'}
-                        </Button>
+                        </button>
                       </div>
                     );
                   }
@@ -933,22 +1110,35 @@ export const FormRuntimePage: React.FC = () => {
                   // MASTER-DETAIL CHILD GRID
                   if (ctrl.type === 'datagrid' || ctrl.type === 'master_detail') {
                     const gridRows = activeDetails[ctrl.id] || [];
-                    const cols = ctrl.detailGridConfig?.columns || [
-                      { field: 'item_name', label: 'Item Name', width: '260px' },
-                      { field: 'sku', label: 'SKU', width: '130px' },
-                      { field: 'quantity', label: 'Qty', width: '80px', type: 'number' },
-                      { field: 'unit_price', label: 'Unit Price ($)', width: '120px', type: 'currency' },
-                      { field: 'line_total', label: 'Line Total ($)', width: '130px', type: 'currency' },
-                    ];
+                    const cols: DetailGridColumn[] =
+                      ctrl.detailGridConfig?.columns && ctrl.detailGridConfig.columns.length > 0
+                        ? ctrl.detailGridConfig.columns
+                        : DEFAULT_DETAIL_GRID_COLUMNS;
+
+                    const defaultRowsCount = Math.max(1, ctrl.detailGridConfig?.defaultVisibleRows || 5);
+                    const rowHeight = ctrl.styling?.gridCellPadding === 'compact' ? 32 : ctrl.styling?.gridCellPadding === 'spacious' ? 44 : 38;
+                    const headerHeight = ctrl.styling?.gridCellPadding === 'compact' ? 34 : ctrl.styling?.gridCellPadding === 'spacious' ? 46 : 40;
+                    const gridMaxHeight = headerHeight + (defaultRowsCount * rowHeight);
 
                     return (
-                      <div key={ctrl.id} style={{ gridColumn: `span ${colSpan}`, marginTop: '8px', width: '100%' }}>
+                      <div
+                        key={ctrl.id}
+                        className={`apex-grid-col-${colSpan}`}
+                        style={{
+                          gridColumn: `span ${colSpan}`,
+                          marginTop: '8px',
+                          width: '100%',
+                          minWidth: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
                             <Table size={15} style={{ color: 'var(--brand-primary)' }} />
                             <span>{ctrl.label || 'Detail Line Items'}</span>
                             <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>
-                              ({gridRows.length} rows)
+                              ({gridRows.length} rows, {defaultRowsCount} visible)
                             </span>
                           </div>
 
@@ -976,24 +1166,46 @@ export const FormRuntimePage: React.FC = () => {
                           )}
                         </div>
 
-                        {/* Detail Grid Table */}
+                        {/* Dedicated Scrollable Detail Grid Container */}
                         <div
+                          className="apex-detail-grid-scroll-wrapper"
                           style={{
-                            borderRadius: 'var(--radius-sm, 4px)',
-                            border: '1px solid var(--border-default, #cbd5e1)',
+                            maxHeight: `${gridMaxHeight}px`,
+                            overflowY: gridRows.length > defaultRowsCount ? 'auto' : 'hidden',
                             overflowX: 'auto',
+                            borderRadius: ctrl.detailGridConfig?.enableTotals
+                              ? `${ctrl.styling?.borderRadius || '4px'} ${ctrl.styling?.borderRadius || '4px'} 0 0`
+                              : ctrl.styling?.borderRadius || 'var(--radius-sm, 4px)',
+                            border: ctrl.styling?.borderColor
+                              ? `${ctrl.styling?.borderWidth || '1px'} ${ctrl.styling?.borderStyle || 'solid'} ${ctrl.styling?.borderColor}`
+                              : '1px solid var(--border-default, #cbd5e1)',
                             width: '100%',
+                            minWidth: 0,
+                            backgroundColor: 'var(--bg-surface, #ffffff)',
+                            position: 'relative',
+                            boxSizing: 'border-box',
                           }}
                         >
-                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                            <thead>
-                              <tr style={{ backgroundColor: 'var(--table-header-bg, var(--surface-2))', borderBottom: '1px solid var(--border-default, #cbd5e1)' }}>
-                                {cols.map((c) => (
-                                  <th key={c.field} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                          <table style={{ width: '100%', minWidth: '100%', borderCollapse: 'collapse', fontSize: ctrl.styling?.fontSize || '12px' }}>
+                            <thead style={{ position: 'sticky', top: 0, zIndex: 3 }}>
+                              <tr style={{ backgroundColor: ctrl.styling?.gridHeaderBg || 'var(--table-header-bg, var(--surface-2))', borderBottom: '1px solid var(--border-default, #cbd5e1)' }}>
+                                {cols.map((c, colIdx) => (
+                                  <th
+                                    key={c.field || colIdx}
+                                    style={{
+                                      width: c.width || (colIdx === 0 ? 'auto' : undefined),
+                                      minWidth: c.width && c.width !== 'auto' ? c.width : '120px',
+                                      padding: ctrl.styling?.gridCellPadding === 'compact' ? '4px 8px' : ctrl.styling?.gridCellPadding === 'spacious' ? '12px 16px' : '8px 12px',
+                                      textAlign: c.type === 'number' || c.type === 'currency' ? 'right' : 'left',
+                                      fontWeight: 600,
+                                      color: ctrl.styling?.gridHeaderTextColor || 'var(--text-primary)',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
                                     {c.label || c.field}
                                   </th>
                                 ))}
-                                <th style={{ width: '40px', padding: '6px 8px', textAlign: 'center' }}></th>
+                                <th style={{ width: '40px', minWidth: '40px', padding: '6px 8px', textAlign: 'center' }}></th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1005,13 +1217,42 @@ export const FormRuntimePage: React.FC = () => {
                                 </tr>
                               ) : (
                                 gridRows.map((row, rIdx) => (
-                                  <tr key={row._tempId || row.id || rIdx} style={{ borderBottom: '1px solid var(--border-default, #cbd5e1)' }}>
-                                    {cols.map((c) => (
-                                      <td key={c.field} style={{ padding: '4px 6px' }}>
+                                  <tr
+                                    key={row._tempId || row.id || rIdx}
+                                    style={{
+                                      borderBottom: '1px solid var(--border-default, #cbd5e1)',
+                                      backgroundColor: ctrl.styling?.gridRowStriped && rIdx % 2 === 1 ? 'var(--surface-1, rgba(0,0,0,0.02))' : undefined,
+                                    }}
+                                  >
+                                    {cols.map((c, cIdx) => (
+                                      <td
+                                        key={c.field || cIdx}
+                                        style={{
+                                          padding: ctrl.styling?.gridCellPadding === 'compact' ? '3px 6px' : ctrl.styling?.gridCellPadding === 'spacious' ? '8px 12px' : '4px 6px',
+                                          textAlign: c.type === 'number' || c.type === 'currency' ? 'right' : 'left',
+                                        }}
+                                      >
                                         <input
                                           type={c.type === 'number' || c.type === 'currency' ? 'number' : 'text'}
+                                          step={c.type === 'currency' ? '0.01' : c.type === 'number' ? '1' : undefined}
                                           value={row[c.field] ?? ''}
                                           disabled={c.editable === false}
+                                          data-grid-cell="true"
+                                          data-grid-id={ctrl.id}
+                                          data-row-idx={rIdx}
+                                          data-col-idx={cIdx}
+                                          onKeyDown={(e) => {
+                                            handleDetailGridEnterNavigation({
+                                              event: e,
+                                              gridId: ctrl.id,
+                                              rowIndex: rIdx,
+                                              colIndex: cIdx,
+                                              totalRows: gridRows.length,
+                                              columns: cols,
+                                              allowAdd: ctrl.detailGridConfig?.allowAdd !== false,
+                                              onAddRow: () => handleAddDetailRow(ctrl.id, cols),
+                                            });
+                                          }}
                                           onChange={(e) => handleDetailCellChange(ctrl.id, rIdx, c.field, e.target.value)}
                                           style={{
                                             width: '100%',
@@ -1021,13 +1262,14 @@ export const FormRuntimePage: React.FC = () => {
                                             border: '1px solid var(--input-border, #64748b)',
                                             backgroundColor: c.editable === false ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
                                             color: 'var(--input-text, var(--text-primary))',
+                                            textAlign: c.type === 'number' || c.type === 'currency' ? 'right' : 'left',
                                             boxSizing: 'border-box',
                                             outline: 'none',
                                           }}
                                         />
                                       </td>
                                     ))}
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td style={{ textAlign: 'center', width: '40px', minWidth: '40px' }}>
                                       <button
                                         type="button"
                                         onClick={() => handleRemoveDetailRow(ctrl.id, rIdx, row)}
@@ -1043,6 +1285,84 @@ export const FormRuntimePage: React.FC = () => {
                             </tbody>
                           </table>
                         </div>
+
+                        {/* Summary / Totals Section below Detail Grid */}
+                        {ctrl.detailGridConfig?.enableTotals && (
+                          <div
+                            className="apex-detail-grid-totals-bar"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'flex-end',
+                              flexWrap: 'wrap',
+                              gap: '12px',
+                              padding: '8px 14px',
+                              backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))',
+                              border: ctrl.styling?.borderColor
+                                ? `${ctrl.styling?.borderWidth || '1px'} ${ctrl.styling?.borderStyle || 'solid'} ${ctrl.styling?.borderColor}`
+                                : '1px solid var(--border-default, #cbd5e1)',
+                              borderTop: 'none',
+                              borderRadius: `0 0 ${ctrl.styling?.borderRadius || 'var(--radius-sm, 4px)'} ${ctrl.styling?.borderRadius || 'var(--radius-sm, 4px)'}`,
+                              boxSizing: 'border-box',
+                              width: '100%',
+                            }}
+                          >
+                            {ctrl.detailGridConfig.summaryFields && ctrl.detailGridConfig.summaryFields.length > 0 ? (
+                              ctrl.detailGridConfig.summaryFields.map((field) => {
+                                const summary = calculateSummaryFieldValue(gridRows, field);
+                                return (
+                                  <div
+                                    key={field.id}
+                                    className="apex-summary-item"
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      padding: '5px 12px',
+                                      borderRadius: 'var(--radius-sm, 4px)',
+                                      backgroundColor: 'var(--bg-surface, #ffffff)',
+                                      border: '1px solid var(--border-default, #cbd5e1)',
+                                      boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                                    }}
+                                  >
+                                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                      {field.label}:
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: '13px',
+                                        fontWeight: 700,
+                                        color: 'var(--brand-primary, #0067b8)',
+                                        fontFamily: 'monospace, var(--font-sans)',
+                                      }}
+                                    >
+                                      {summary.formattedValue}
+                                    </span>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  padding: '5px 12px',
+                                  borderRadius: 'var(--radius-sm, 4px)',
+                                  backgroundColor: 'var(--bg-surface, #ffffff)',
+                                  border: '1px solid var(--border-default, #cbd5e1)',
+                                }}
+                              >
+                                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                  Total Rows:
+                                </span>
+                                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                                  {gridRows.length}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   }
@@ -1051,17 +1371,9 @@ export const FormRuntimePage: React.FC = () => {
                   const opts = lookupOptions[ctrl.id] || ctrl.lookupConfig?.staticOptions || [];
 
                   return (
-                    <div key={ctrl.id} style={{ gridColumn: `span ${colSpan}` }}>
+                    <div key={ctrl.id} className={`apex-grid-col-${colSpan}`} style={{ gridColumn: `span ${colSpan}` }}>
                       {ctrl.styling?.labelPosition !== 'hidden' && (
-                        <label
-                          style={{
-                            display: 'block',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            marginBottom: '4px',
-                            color: 'var(--text-primary)',
-                          }}
-                        >
+                        <label style={labelStyles}>
                           {ctrl.label}
                           {ctrl.validation?.required && <span style={{ color: 'var(--status-danger)' }}> *</span>}
                         </label>
@@ -1075,17 +1387,8 @@ export const FormRuntimePage: React.FC = () => {
                           placeholder={ctrl.placeholder || `Enter ${ctrl.label}...`}
                           rows={3}
                           disabled={ctrl.disabled || ctrl.readOnly}
-                          style={{
-                            width: '100%',
-                            padding: '7px 10px',
-                            fontSize: '12px',
-                            borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
-                            border: '1px solid var(--input-border, #64748b)',
-                            backgroundColor: ctrl.readOnly ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
-                            color: 'var(--input-text, var(--text-primary))',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                          }}
+                          required={ctrl.validation?.required}
+                          style={controlStyles}
                         />
                       ) : ctrl.type === 'select' || ctrl.type === 'lookup' || (ctrl.type as string) === 'lov' ? (
                         /* Dropdown / Select / Lookup / LOV */
@@ -1093,16 +1396,9 @@ export const FormRuntimePage: React.FC = () => {
                           value={val}
                           onChange={(e) => handleMasterFieldChange(fieldKey, e.target.value, ctrl)}
                           disabled={ctrl.disabled || ctrl.readOnly}
+                          required={ctrl.validation?.required}
                           style={{
-                            width: '100%',
-                            padding: '7px 10px',
-                            fontSize: '12px',
-                            borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
-                            border: '1px solid var(--input-border, #64748b)',
-                            backgroundColor: ctrl.readOnly ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
-                            color: 'var(--input-text, var(--text-primary))',
-                            outline: 'none',
-                            boxSizing: 'border-box',
+                            ...controlStyles,
                             cursor: 'pointer',
                           }}
                         >
@@ -1144,7 +1440,7 @@ export const FormRuntimePage: React.FC = () => {
                       ) : ctrl.type === 'switch' ? (
                         /* Switch */
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <span style={labelStyles}>
                             {ctrl.label}
                           </span>
                           <input
@@ -1165,7 +1461,7 @@ export const FormRuntimePage: React.FC = () => {
                             disabled={ctrl.disabled || ctrl.readOnly}
                             style={{ cursor: 'pointer' }}
                           />
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          <span style={labelStyles}>
                             {ctrl.label}
                           </span>
                         </div>
@@ -1182,30 +1478,15 @@ export const FormRuntimePage: React.FC = () => {
                             onChange={(e) => handleMasterFieldChange(fieldKey, e.target.value, ctrl)}
                             placeholder={ctrl.placeholder || '0.00'}
                             disabled={ctrl.disabled || ctrl.readOnly}
-                            style={{
-                              width: '100%',
-                              padding: '7px 10px 7px 24px',
-                              fontSize: '12px',
-                              borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
-                              border: '1px solid var(--input-border, #64748b)',
-                              backgroundColor: ctrl.readOnly ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
-                              color: 'var(--input-text, var(--text-primary))',
-                              outline: 'none',
-                              boxSizing: 'border-box',
-                            }}
+                            required={ctrl.validation?.required}
+                            style={controlStyles}
                           />
                         </div>
                       ) : ctrl.type === 'readonly' ? (
                         /* Read-only / Display Field */
                         <div
                           style={{
-                            padding: '7px 10px',
-                            fontSize: '12px',
-                            borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
-                            border: '1px solid var(--input-border, #64748b)',
-                            backgroundColor: 'var(--surface-2, rgba(0,0,0,0.03))',
-                            color: 'var(--text-primary)',
-                            fontWeight: 500,
+                            ...controlStyles,
                             minHeight: '34px',
                             display: 'flex',
                             alignItems: 'center',
@@ -1238,17 +1519,8 @@ export const FormRuntimePage: React.FC = () => {
                           onChange={(e) => handleMasterFieldChange(fieldKey, e.target.value, ctrl)}
                           placeholder={ctrl.placeholder || `Enter ${ctrl.label}...`}
                           disabled={ctrl.disabled || ctrl.readOnly}
-                          style={{
-                            width: '100%',
-                            padding: '7px 10px',
-                            fontSize: '12px',
-                            borderRadius: 'var(--radius-input, var(--radius-sm, 4px))',
-                            border: '1px solid var(--input-border, #64748b)',
-                            backgroundColor: ctrl.readOnly ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
-                            color: 'var(--input-text, var(--text-primary))',
-                            outline: 'none',
-                            boxSizing: 'border-box',
-                          }}
+                          required={ctrl.validation?.required}
+                          style={controlStyles}
                         />
                       )}
 
@@ -1429,12 +1701,13 @@ export const FormRuntimePage: React.FC = () => {
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '24px 32px',
+            padding: '16px 20px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
             boxSizing: 'border-box',
             width: '100%',
+            minWidth: 0,
           }}
         >
           {renderFormContent(true)}
@@ -1492,7 +1765,7 @@ export const FormRuntimePage: React.FC = () => {
             style={{
               flex: 1,
               overflowY: 'auto',
-              padding: '24px',
+              padding: '20px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'stretch',
@@ -1522,7 +1795,7 @@ export const FormRuntimePage: React.FC = () => {
     >
       {renderDedicatedFormHeader(false, false)}
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'stretch' }}>
         {renderFormContent(false)}
       </div>
 

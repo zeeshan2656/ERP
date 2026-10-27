@@ -10,6 +10,7 @@ import {
   EligibleDataSourcesResponse,
   MasterDetailConfig,
   LookupDependentFieldMapping,
+  DetailGridSummaryField,
 } from '../../../../types/index.ts';
 import {
   Sliders,
@@ -31,7 +32,18 @@ import {
   Check,
   RefreshCw,
   Info,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Bold,
+  Italic,
+  Underline,
+  Square,
+  Sparkles,
+  RotateCcw,
 } from 'lucide-react';
+import { RESET_STYLING } from '../../../../utils/formStyling.ts';
+import { BoxAppearancePreset, BorderStyleType, ShadowElevation, FormControlStyling } from '../../../../types/forms.ts';
 
 export const COMPONENT_TYPE_OPTIONS: Array<{ value: FormControlType; label: string }> = [
   { value: 'text', label: 'Text / Single-line Text' },
@@ -1504,88 +1516,976 @@ export const DesignerPropertiesPanel: React.FC<DesignerPropertiesPanelProps> = (
           </>
         )}
 
-        {/* TAB: APPEARANCE */}
+        {/* TAB: APPEARANCE & ADVANCED VISUAL STYLING */}
         {controlTab === 'appearance' && (
-          <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Header with Reset Action */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '6px', borderBottom: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: '12px', color: 'var(--brand-primary, #0067b8)' }}>
+                <Palette size={14} />
+                <span>Element Appearance & Styling</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => onUpdateControl(selectedControl.id, { styling: { ...RESET_STYLING } })}
+                title="Reset all styling properties to theme default"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-default, #cbd5e1)',
+                  backgroundColor: 'var(--surface-0, #ffffff)',
+                  color: 'var(--text-secondary, #64748b)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <RotateCcw size={11} />
+                <span>Reset</span>
+              </button>
+            </div>
+
+            {/* 1. BOX APPEARANCE PRESETS (Oracle APEX & MS Access 3D / Flat) */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: 'var(--text-primary)' }}>
+                <span>Box Appearance & 3D Style</span>
+                <span style={{ fontSize: '10px', color: 'var(--brand-primary)', fontWeight: 600 }}>APEX & Access Style</span>
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px' }}>
+                {([
+                  { key: 'default', label: 'Default', desc: 'Theme input' },
+                  { key: 'inset', label: 'Inset (3D)', desc: 'Recessed 3D entry' },
+                  { key: 'outset', label: 'Outset (3D)', desc: 'Raised 3D element' },
+                  { key: 'flat', label: 'Flat', desc: 'No border, soft bg' },
+                  { key: 'outlined', label: 'Outlined', desc: 'Accent border' },
+                  { key: 'filled', label: 'Filled', desc: 'Solid filled surface' },
+                  { key: 'raised', label: 'Raised', desc: 'Elevated shadow' },
+                  { key: 'recessed', label: 'Recessed', desc: 'Inner soft shadow' },
+                  { key: 'borderless', label: 'Borderless', desc: 'Clean transparent' },
+                ] as const).map((preset) => {
+                  const isActive = (selectedControl.styling?.boxAppearance || 'default') === preset.key;
+                  return (
+                    <button
+                      key={preset.key}
+                      type="button"
+                      onClick={() =>
+                        onUpdateControl(selectedControl.id, {
+                          styling: {
+                            ...(selectedControl.styling || {}),
+                            boxAppearance: preset.key,
+                            ...(preset.key === 'inset'
+                              ? { borderStyle: 'inset', borderWidth: selectedControl.styling?.borderWidth || '2px' }
+                              : preset.key === 'outset'
+                              ? { borderStyle: 'outset', borderWidth: selectedControl.styling?.borderWidth || '2px' }
+                              : {}),
+                          },
+                        })
+                      }
+                      style={{
+                        padding: '6px 4px',
+                        fontSize: '11px',
+                        fontWeight: isActive ? 700 : 500,
+                        borderRadius: '4px',
+                        border: isActive ? '1.5px solid var(--brand-primary, #0067b8)' : '1px solid var(--border-default, #cbd5e1)',
+                        backgroundColor: isActive ? 'var(--brand-primary-subtle, rgba(0,103,184,0.1))' : 'var(--surface-0, #ffffff)',
+                        color: isActive ? 'var(--brand-primary, #0067b8)' : 'var(--text-primary)',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '2px',
+                        transition: 'all 0.15s ease',
+                      }}
+                    >
+                      <span>{preset.label}</span>
+                      <span style={{ fontSize: '9px', opacity: 0.75, fontWeight: 400 }}>{preset.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 2. BORDERS & CORNERS */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                Borders & Corners
+              </div>
+
+              {/* Border Style */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Border Style
+                </label>
+                <select
+                  value={selectedControl.styling?.borderStyle || 'solid'}
+                  onChange={(e) =>
+                    onUpdateControl(selectedControl.id, {
+                      styling: { ...(selectedControl.styling || {}), borderStyle: e.target.value as BorderStyleType },
+                    })
+                  }
+                  style={{
+                    width: '100%',
+                    padding: '5px 8px',
+                    fontSize: '11px',
+                    borderRadius: '4px',
+                    border: '1px solid var(--input-border, #64748b)',
+                    backgroundColor: 'var(--input-bg, var(--surface-0))',
+                    color: 'var(--text-primary)',
+                  }}
+                >
+                  <option value="solid">Solid</option>
+                  <option value="inset">Inset (Recessed 3D)</option>
+                  <option value="outset">Outset (Raised 3D)</option>
+                  <option value="groove">Groove</option>
+                  <option value="ridge">Ridge</option>
+                  <option value="dashed">Dashed</option>
+                  <option value="dotted">Dotted</option>
+                  <option value="double">Double</option>
+                  <option value="none">None (No Border)</option>
+                </select>
+              </div>
+
+              {/* Border Width & Radius */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Border Width
+                  </label>
+                  <select
+                    value={selectedControl.styling?.borderWidth || '1px'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), borderWidth: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="0px">0px (None)</option>
+                    <option value="1px">1px (Thin)</option>
+                    <option value="2px">2px (Medium 3D)</option>
+                    <option value="3px">3px (Thick)</option>
+                    <option value="4px">4px (Heavy)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Border Radius
+                  </label>
+                  <select
+                    value={selectedControl.styling?.borderRadius || '4px'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), borderRadius: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="0px">Square (0px)</option>
+                    <option value="2px">Slight (2px)</option>
+                    <option value="4px">Standard (4px)</option>
+                    <option value="8px">Rounded (8px)</option>
+                    <option value="12px">Large (12px)</option>
+                    <option value="9999px">Pill / Fully Rounded</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Border Color */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Border Color
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="color"
+                    value={selectedControl.styling?.borderColor || '#64748b'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), borderColor: e.target.value },
+                      })
+                    }
+                    style={{ width: '28px', height: '26px', padding: '0', border: '1px solid var(--border-default)', borderRadius: '3px', cursor: 'pointer' }}
+                  />
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.borderColor || ''}
+                    placeholder="Theme default (#64748b)"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), borderColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      flex: 1,
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 3. COLORS & BACKGROUND */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                Colors & Background
+              </div>
+
+              {/* Background Color */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Background Color
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="color"
+                    value={selectedControl.styling?.bgColor || '#ffffff'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), bgColor: e.target.value },
+                      })
+                    }
+                    style={{ width: '28px', height: '26px', padding: '0', border: '1px solid var(--border-default)', borderRadius: '3px', cursor: 'pointer' }}
+                  />
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.bgColor || ''}
+                    placeholder="Default (or hex/rgba)"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), bgColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      flex: 1,
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), bgColor: 'transparent' },
+                      })
+                    }
+                    title="Set Transparent Background"
+                    style={{ fontSize: '10px', padding: '4px 6px', borderRadius: '3px', border: '1px solid var(--border-default)', background: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Text Foreground Color */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Text Color
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <input
+                    type="color"
+                    value={selectedControl.styling?.textColor || '#0f172a'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), textColor: e.target.value },
+                      })
+                    }
+                    style={{ width: '28px', height: '26px', padding: '0', border: '1px solid var(--border-default)', borderRadius: '3px', cursor: 'pointer' }}
+                  />
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.textColor || ''}
+                    placeholder="Theme text default"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), textColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      flex: 1,
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Shadow & Elevation */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Shadow & Elevation
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px' }}>
+                  {(['none', 'subtle', 'medium', 'strong'] as const).map((elev) => {
+                    const isElv = (selectedControl.styling?.shadowElevation || 'none') === elev;
+                    return (
+                      <button
+                        key={elev}
+                        type="button"
+                        onClick={() =>
+                          onUpdateControl(selectedControl.id, {
+                            styling: { ...(selectedControl.styling || {}), shadowElevation: elev as ShadowElevation },
+                          })
+                        }
+                        style={{
+                          padding: '4px',
+                          fontSize: '10px',
+                          fontWeight: isElv ? 700 : 500,
+                          borderRadius: '3px',
+                          border: isElv ? '1px solid var(--brand-primary)' : '1px solid var(--border-default, #cbd5e1)',
+                          backgroundColor: isElv ? 'var(--brand-primary-subtle, rgba(0,103,184,0.1))' : 'var(--surface-0)',
+                          color: isElv ? 'var(--brand-primary)' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {elev}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. TYPOGRAPHY & TEXT FORMATTING */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                Typography & Font
+              </div>
+
+              {/* Font Family & Size */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Font Family
+                  </label>
+                  <select
+                    value={selectedControl.styling?.fontFamily || 'inherit'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), fontFamily: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="inherit">Default (System)</option>
+                    <option value="Inter, sans-serif">Inter</option>
+                    <option value="Roboto, sans-serif">Roboto</option>
+                    <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                    <option value="monospace">Monospace (Code)</option>
+                    <option value="Georgia, serif">Georgia (Serif)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Font Size
+                  </label>
+                  <select
+                    value={selectedControl.styling?.fontSize || '12px'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), fontSize: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="11px">11px (Compact)</option>
+                    <option value="12px">12px (Standard)</option>
+                    <option value="13px">13px (Medium)</option>
+                    <option value="14px">14px (Comfortable)</option>
+                    <option value="16px">16px (Large)</option>
+                    <option value="18px">18px (Header)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bold, Italic, Underline & Alignment */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                {/* Format Buttons */}
+                <div style={{ display: 'inline-flex', borderRadius: '4px', border: '1px solid var(--border-default)', overflow: 'hidden' }}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), isBold: !selectedControl.styling?.isBold },
+                      })
+                    }
+                    style={{
+                      padding: '5px 9px',
+                      background: selectedControl.styling?.isBold ? 'var(--brand-primary-subtle, rgba(0,103,184,0.15))' : 'var(--surface-0)',
+                      color: selectedControl.styling?.isBold ? 'var(--brand-primary)' : 'var(--text-primary)',
+                      border: 'none',
+                      borderRight: '1px solid var(--border-default)',
+                      cursor: 'pointer',
+                    }}
+                    title="Bold"
+                  >
+                    <Bold size={12} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), isItalic: !selectedControl.styling?.isItalic },
+                      })
+                    }
+                    style={{
+                      padding: '5px 9px',
+                      background: selectedControl.styling?.isItalic ? 'var(--brand-primary-subtle, rgba(0,103,184,0.15))' : 'var(--surface-0)',
+                      color: selectedControl.styling?.isItalic ? 'var(--brand-primary)' : 'var(--text-primary)',
+                      border: 'none',
+                      borderRight: '1px solid var(--border-default)',
+                      cursor: 'pointer',
+                    }}
+                    title="Italic"
+                  >
+                    <Italic size={12} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), isUnderline: !selectedControl.styling?.isUnderline },
+                      })
+                    }
+                    style={{
+                      padding: '5px 9px',
+                      background: selectedControl.styling?.isUnderline ? 'var(--brand-primary-subtle, rgba(0,103,184,0.15))' : 'var(--surface-0)',
+                      color: selectedControl.styling?.isUnderline ? 'var(--brand-primary)' : 'var(--text-primary)',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                    title="Underline"
+                  >
+                    <Underline size={12} />
+                  </button>
+                </div>
+
+                {/* Text Alignment */}
+                <div style={{ display: 'inline-flex', borderRadius: '4px', border: '1px solid var(--border-default)', overflow: 'hidden' }}>
+                  {(['left', 'center', 'right'] as const).map((align) => {
+                    const isAlign = (selectedControl.styling?.textAlign || (['number', 'currency'].includes(selectedControl.type) ? 'right' : 'left')) === align;
+                    return (
+                      <button
+                        key={align}
+                        type="button"
+                        onClick={() =>
+                          onUpdateControl(selectedControl.id, {
+                            styling: { ...(selectedControl.styling || {}), textAlign: align },
+                          })
+                        }
+                        style={{
+                          padding: '5px 8px',
+                          background: isAlign ? 'var(--brand-primary-subtle, rgba(0,103,184,0.15))' : 'var(--surface-0)',
+                          color: isAlign ? 'var(--brand-primary)' : 'var(--text-primary)',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                        title={`Align ${align}`}
+                      >
+                        {align === 'left' ? <AlignLeft size={12} /> : align === 'center' ? <AlignCenter size={12} /> : <AlignRight size={12} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 5. PADDING, MARGINS & SIZING */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                Padding, Sizing & Spacing
+              </div>
+
+              {/* Internal Padding */}
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                  Internal Padding
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '4px' }}>
+                  {[
+                    { label: 'Compact', val: '4px 8px' },
+                    { label: 'Standard', val: '7px 10px' },
+                    { label: 'Spacious', val: '10px 14px' },
+                  ].map((p) => {
+                    const isPad = (selectedControl.styling?.padding || '7px 10px') === p.val;
+                    return (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() =>
+                          onUpdateControl(selectedControl.id, {
+                            styling: { ...(selectedControl.styling || {}), padding: p.val },
+                          })
+                        }
+                        style={{
+                          padding: '4px 2px',
+                          fontSize: '10px',
+                          fontWeight: isPad ? 700 : 500,
+                          borderRadius: '3px',
+                          border: isPad ? '1px solid var(--brand-primary)' : '1px solid var(--border-default)',
+                          backgroundColor: isPad ? 'var(--brand-primary-subtle, rgba(0,103,184,0.1))' : 'var(--surface-0)',
+                          color: isPad ? 'var(--brand-primary)' : 'var(--text-primary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Width & Height */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Width
+                  </label>
+                  <input
+                    value={selectedControl.styling?.width || selectedControl.width || ''}
+                    placeholder="100% or e.g. 250px"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), width: e.target.value },
+                        width: e.target.value || null,
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Height
+                  </label>
+                  <input
+                    value={selectedControl.styling?.height || selectedControl.height || ''}
+                    placeholder="Auto or e.g. 36px"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), height: e.target.value },
+                        height: e.target.value || null,
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 6. INTERACTIVE & FOCUS STATES */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                Focus & Hover States
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Focus Border
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.focusBorderColor || ''}
+                    placeholder="var(--brand-primary)"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), focusBorderColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Focus Glow / Ring
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.focusRingColor || ''}
+                    placeholder="rgba(0,103,184,0.25)"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), focusRingColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Hover States */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Hover Border
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.hoverBorderColor || ''}
+                    placeholder="e.g. #334155"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), hoverBorderColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Hover Background
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.hoverBgColor || ''}
+                    placeholder="e.g. #f1f5f9"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), hoverBgColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Disabled & Read-Only State Overrides */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Disabled Bg Color
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.disabledBgColor || ''}
+                    placeholder="Theme default"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), disabledBgColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Read-Only Bg Color
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.readOnlyBgColor || ''}
+                    placeholder="Theme default"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), readOnlyBgColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 7. ELEMENT-SPECIFIC PROPERTIES */}
+            {selectedControl.type === 'button' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+                <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                  Button Visual Properties
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Button Variant Style
+                  </label>
+                  <select
+                    value={selectedControl.styling?.buttonVariant || 'primary'}
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), buttonVariant: e.target.value as any },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  >
+                    <option value="primary">Primary (Brand Accent)</option>
+                    <option value="secondary">Secondary (Neutral)</option>
+                    <option value="outline">Outline (Bordered)</option>
+                    <option value="danger">Danger (Red Warning)</option>
+                    <option value="ghost">Ghost (Subtle Hover)</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {(selectedControl.type === 'section' || selectedControl.type === 'heading') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+                <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                  Section & Heading Typography
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                    Divider / Border Color
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedControl.styling?.sectionBorderColor || ''}
+                    placeholder="Theme default (var(--border-default))"
+                    onChange={(e) =>
+                      onUpdateControl(selectedControl.id, {
+                        styling: { ...(selectedControl.styling || {}), sectionBorderColor: e.target.value },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '5px 8px',
+                      fontSize: '11px',
+                      borderRadius: '4px',
+                      border: '1px solid var(--input-border, #64748b)',
+                      backgroundColor: 'var(--input-bg, var(--surface-0))',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {(selectedControl.type === 'datagrid' || selectedControl.type === 'master_detail') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+                <div style={{ fontWeight: 700, fontSize: '11px', color: 'var(--text-primary)' }}>
+                  Detail Grid Visuals
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                      Header Background
+                    </label>
+                    <input
+                      type="text"
+                      value={selectedControl.styling?.gridHeaderBg || ''}
+                      placeholder="var(--table-header-bg)"
+                      onChange={(e) =>
+                        onUpdateControl(selectedControl.id, {
+                          styling: { ...(selectedControl.styling || {}), gridHeaderBg: e.target.value },
+                        })
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '5px 8px',
+                        fontSize: '11px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--input-border, #64748b)',
+                        backgroundColor: 'var(--input-bg, var(--surface-0))',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-secondary)' }}>
+                      Cell Density
+                    </label>
+                    <select
+                      value={selectedControl.styling?.gridCellPadding || 'normal'}
+                      onChange={(e) =>
+                        onUpdateControl(selectedControl.id, {
+                          styling: { ...(selectedControl.styling || {}), gridCellPadding: e.target.value as any },
+                        })
+                      }
+                      style={{
+                        width: '100%',
+                        padding: '5px 8px',
+                        fontSize: '11px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--input-border, #64748b)',
+                        backgroundColor: 'var(--input-bg, var(--surface-0))',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      <option value="compact">Compact (3px 6px)</option>
+                      <option value="normal">Normal (5px 8px)</option>
+                      <option value="spacious">Spacious (8px 12px)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 8. LABEL POSITION */}
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '3px', color: 'var(--text-primary)' }}>
                 Label Position
               </label>
               <select
                 value={selectedControl.styling?.labelPosition || 'above'}
                 onChange={(e) =>
                   onUpdateControl(selectedControl.id, {
-                    styling: { ...selectedControl.styling, labelPosition: e.target.value as any },
+                    styling: { ...(selectedControl.styling || {}), labelPosition: e.target.value as any },
                   })
                 }
                 style={{
                   width: '100%',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  borderRadius: 'var(--radius-sm, 4px)',
-                  border: '1px solid var(--border-subtle, #cbd5e1)',
-                  backgroundColor: 'var(--surface-0, #ffffff)',
+                  padding: '5px 8px',
+                  fontSize: '11px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--input-border, #64748b)',
+                  backgroundColor: 'var(--input-bg, var(--surface-0))',
                   color: 'var(--text-primary)',
-                  outline: 'none',
                 }}
               >
                 <option value="above">Above Input</option>
-                <option value="left">Left of Input</option>
-                <option value="hidden">Hidden</option>
+                <option value="left">Left of Input (Access Classic)</option>
+                <option value="hidden">Hidden (No Label)</option>
               </select>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>
-                Font Size
+            {/* 9. VISIBILITY & RUNTIME DISPLAY */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', backgroundColor: 'var(--surface-1, rgba(0,0,0,0.02))', borderRadius: '6px', border: '1px solid var(--border-default, #cbd5e1)' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)' }}>Element Visibility</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Show or hide this element in published runtime</div>
+              </div>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', color: selectedControl.styling?.isHidden ? 'var(--status-warning-text, #b45309)' : 'var(--status-success-text, #16a34a)' }}>
+                <input
+                  type="checkbox"
+                  checked={!selectedControl.styling?.isHidden}
+                  onChange={(e) =>
+                    onUpdateControl(selectedControl.id, {
+                      styling: { ...(selectedControl.styling || {}), isHidden: !e.target.checked },
+                    })
+                  }
+                />
+                <span>{selectedControl.styling?.isHidden ? 'Hidden at Runtime' : 'Visible'}</span>
               </label>
-              <select
-                value={selectedControl.styling?.fontSize || '13px'}
-                onChange={(e) =>
-                  onUpdateControl(selectedControl.id, {
-                    styling: { ...selectedControl.styling, fontSize: e.target.value },
-                  })
-                }
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  borderRadius: 'var(--radius-sm, 4px)',
-                  border: '1px solid var(--border-subtle, #cbd5e1)',
-                  backgroundColor: 'var(--surface-0, #ffffff)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                }}
-              >
-                <option value="11px">Small (11px)</option>
-                <option value="13px">Standard (13px)</option>
-                <option value="15px">Medium (15px)</option>
-                <option value="18px">Large (18px)</option>
-              </select>
             </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>
-                Control Height
-              </label>
-              <input
-                value={selectedControl.height || ''}
-                onChange={(e) => onUpdateControl(selectedControl.id, { height: e.target.value })}
-                placeholder="e.g. 36px, 120px..."
-                style={{
-                  width: '100%',
-                  padding: '6px 8px',
-                  fontSize: '12px',
-                  borderRadius: 'var(--radius-sm, 4px)',
-                  border: '1px solid var(--border-subtle, #cbd5e1)',
-                  backgroundColor: 'var(--surface-0, #ffffff)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-              />
-            </div>
-          </>
+          </div>
         )}
 
         {/* TAB: VALIDATION */}
@@ -1867,6 +2767,455 @@ export const DesignerPropertiesPanel: React.FC<DesignerPropertiesPanelProps> = (
                     />
                     Cascade Delete with Master
                   </label>
+                </div>
+
+                {/* Default Visible Rows Configuration */}
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-default, #cbd5e1)' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>
+                    Default Visible Rows
+                  </label>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '0 0 6px' }}>
+                    Number of visible rows shown in the detail grid container before scrolling.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={selectedControl.detailGridConfig?.defaultVisibleRows ?? 5}
+                      onChange={(e) => {
+                        const val = Math.max(1, Math.min(50, parseInt(e.target.value) || 5));
+                        onUpdateControl(selectedControl.id, {
+                          detailGridConfig: {
+                            detailTable: '',
+                            foreignKeyColumn: '',
+                            masterKeyColumn: 'id',
+                            columns: [],
+                            ...selectedControl.detailGridConfig,
+                            defaultVisibleRows: val,
+                          },
+                        });
+                      }}
+                      style={{
+                        width: '80px',
+                        padding: '6px 8px',
+                        fontSize: '12px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--input-border, #64748b)',
+                        backgroundColor: 'var(--input-bg, var(--surface-0))',
+                        color: 'var(--text-primary)',
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      rows (empty grid renders this many blank rows)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Enable Totals & Summary Calculations */}
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-default, #cbd5e1)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    <span>Enable Column Totals & Calculations</span>
+                    <input
+                      type="checkbox"
+                      checked={selectedControl.detailGridConfig?.enableTotals ?? false}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        const existingSummary = selectedControl.detailGridConfig?.summaryFields || [];
+                        const initialSummary = enabled && existingSummary.length === 0
+                          ? [
+                              {
+                                id: `sum_${Date.now()}`,
+                                label: 'Grand Total',
+                                sourceColumn: 'line_total',
+                                calculationType: 'SUM' as const,
+                                format: 'currency' as const,
+                                decimalPlaces: 2,
+                                prefix: '$',
+                                targetFieldBinding: 'total_amount',
+                              },
+                            ]
+                          : existingSummary;
+
+                        onUpdateControl(selectedControl.id, {
+                          detailGridConfig: {
+                            detailTable: '',
+                            foreignKeyColumn: '',
+                            masterKeyColumn: 'id',
+                            columns: [],
+                            ...selectedControl.detailGridConfig,
+                            enableTotals: enabled,
+                            summaryFields: initialSummary,
+                          },
+                        });
+                      }}
+                    />
+                  </label>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 10px' }}>
+                    Calculate totals, subtotals, or formulas below the grid and sync with master record fields.
+                  </p>
+
+                  {selectedControl.detailGridConfig?.enableTotals && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+                      {/* List of Configured Summary Fields */}
+                      {(selectedControl.detailGridConfig.summaryFields || []).map((summary, sIdx) => {
+                        const detailCols = (selectedControl.detailGridConfig?.columns && selectedControl.detailGridConfig.columns.length > 0)
+                          ? selectedControl.detailGridConfig.columns
+                          : [
+                              { field: 'quantity', label: 'Qty' },
+                              { field: 'unit_price', label: 'Unit Price' },
+                              { field: 'discount', label: 'Discount' },
+                              { field: 'line_total', label: 'Line Total' },
+                            ];
+
+                        const updateSummary = (patch: Partial<DetailGridSummaryField>) => {
+                          const updatedList = [...(selectedControl.detailGridConfig?.summaryFields || [])];
+                          updatedList[sIdx] = { ...updatedList[sIdx], ...patch };
+                          onUpdateControl(selectedControl.id, {
+                            detailGridConfig: {
+                              detailTable: '',
+                              foreignKeyColumn: '',
+                              masterKeyColumn: 'id',
+                              columns: [],
+                              ...selectedControl.detailGridConfig,
+                              summaryFields: updatedList,
+                            },
+                          });
+                        };
+
+                        const removeSummary = () => {
+                          const updatedList = (selectedControl.detailGridConfig?.summaryFields || []).filter((_, i) => i !== sIdx);
+                          onUpdateControl(selectedControl.id, {
+                            detailGridConfig: {
+                              detailTable: '',
+                              foreignKeyColumn: '',
+                              masterKeyColumn: 'id',
+                              columns: [],
+                              ...selectedControl.detailGridConfig,
+                              summaryFields: updatedList,
+                            },
+                          });
+                        };
+
+                        return (
+                          <div
+                            key={summary.id || sIdx}
+                            style={{
+                              padding: '10px',
+                              backgroundColor: 'var(--surface-0, #ffffff)',
+                              borderRadius: '6px',
+                              border: '1px solid var(--border-default, #cbd5e1)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--brand-primary, #0067b8)' }}>
+                                #{sIdx + 1}: {summary.label || 'Summary Field'}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={removeSummary}
+                                title="Remove summary field"
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: 'var(--status-danger-text, #ef4444)',
+                                  padding: '2px',
+                                }}
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+
+                            {/* Label */}
+                            <div>
+                              <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                Summary Label
+                              </label>
+                              <input
+                                type="text"
+                                value={summary.label || ''}
+                                onChange={(e) => updateSummary({ label: e.target.value })}
+                                placeholder="e.g. Grand Total, Total Qty"
+                                style={{
+                                  width: '100%',
+                                  padding: '4px 6px',
+                                  fontSize: '11px',
+                                  borderRadius: '4px',
+                                  border: '1px solid var(--input-border, #64748b)',
+                                  backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                  color: 'var(--text-primary)',
+                                  boxSizing: 'border-box',
+                                }}
+                              />
+                            </div>
+
+                            {/* Calculation Type & Source Column */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Calculation Type
+                                </label>
+                                <select
+                                  value={summary.calculationType || 'SUM'}
+                                  onChange={(e) => updateSummary({ calculationType: e.target.value as any })}
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                >
+                                  <option value="SUM">SUM (Total)</option>
+                                  <option value="COUNT">COUNT (Rows)</option>
+                                  <option value="AVG">AVG (Average)</option>
+                                  <option value="MIN">MIN (Minimum)</option>
+                                  <option value="MAX">MAX (Maximum)</option>
+                                  <option value="FORMULA">FORMULA (Expression)</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Detail Column
+                                </label>
+                                <select
+                                  value={summary.sourceColumn || ''}
+                                  onChange={(e) => updateSummary({ sourceColumn: e.target.value })}
+                                  disabled={summary.calculationType === 'FORMULA'}
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: summary.calculationType === 'FORMULA' ? 'var(--surface-2)' : 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                >
+                                  <option value="">-- Choose column --</option>
+                                  {detailCols.map((col) => (
+                                    <option key={col.field} value={col.field}>
+                                      {col.label || col.field}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Formula Input (shown when FORMULA calculation type is chosen) */}
+                            {summary.calculationType === 'FORMULA' && (
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Formula Expression
+                                </label>
+                                <input
+                                  type="text"
+                                  value={summary.formula || ''}
+                                  onChange={(e) => updateSummary({ formula: e.target.value })}
+                                  placeholder="e.g. SUM(quantity * unit_price)"
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    fontFamily: 'monospace',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                    boxSizing: 'border-box',
+                                  }}
+                                />
+                                <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
+                                  Supported: SUM(quantity * unit_price), SUM(line_total - discount)
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Format & Decimals */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Display Format
+                                </label>
+                                <select
+                                  value={summary.format || 'currency'}
+                                  onChange={(e) =>
+                                    updateSummary({
+                                      format: e.target.value as any,
+                                      prefix: e.target.value === 'currency' ? '$' : '',
+                                    })
+                                  }
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                >
+                                  <option value="currency">Currency ($1,234.56)</option>
+                                  <option value="number">Number (1,234)</option>
+                                  <option value="percentage">Percentage (15%)</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Decimal Places
+                                </label>
+                                <select
+                                  value={summary.decimalPlaces ?? (summary.format === 'currency' ? 2 : 0)}
+                                  onChange={(e) => updateSummary({ decimalPlaces: parseInt(e.target.value) || 0 })}
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                >
+                                  <option value="0">0 decimals</option>
+                                  <option value="1">1 decimal</option>
+                                  <option value="2">2 decimals</option>
+                                  <option value="3">3 decimals</option>
+                                  <option value="4">4 decimals</option>
+                                </select>
+                              </div>
+                            </div>
+
+                            {/* Prefix & Suffix */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Prefix
+                                </label>
+                                <input
+                                  type="text"
+                                  value={summary.prefix || ''}
+                                  onChange={(e) => updateSummary({ prefix: e.target.value })}
+                                  placeholder="$"
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                    boxSizing: 'border-box',
+                                  }}
+                                />
+                              </div>
+
+                              <div>
+                                <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                  Suffix
+                                </label>
+                                <input
+                                  type="text"
+                                  value={summary.suffix || ''}
+                                  onChange={(e) => updateSummary({ suffix: e.target.value })}
+                                  placeholder="e.g. items, USD"
+                                  style={{
+                                    width: '100%',
+                                    padding: '4px 6px',
+                                    fontSize: '11px',
+                                    borderRadius: '4px',
+                                    border: '1px solid var(--input-border, #64748b)',
+                                    backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                    color: 'var(--text-primary)',
+                                    boxSizing: 'border-box',
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Sync to Master Field */}
+                            <div>
+                              <label style={{ display: 'block', fontSize: '10px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '2px' }}>
+                                Sync to Master Record Field (Optional)
+                              </label>
+                              <select
+                                value={summary.targetFieldBinding || ''}
+                                onChange={(e) => updateSummary({ targetFieldBinding: e.target.value || undefined })}
+                                style={{
+                                  width: '100%',
+                                  padding: '4px 6px',
+                                  fontSize: '11px',
+                                  borderRadius: '4px',
+                                  border: '1px solid var(--input-border, #64748b)',
+                                  backgroundColor: 'var(--input-bg, var(--surface-1))',
+                                  color: 'var(--text-primary)',
+                                }}
+                              >
+                                <option value="">-- None (display total only) --</option>
+                                {sourceSchema?.columns?.map((c) => (
+                                  <option key={c.name} value={c.name}>
+                                    {c.name} ({c.dataType})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Add Summary Field Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentList = selectedControl.detailGridConfig?.summaryFields || [];
+                          const newField: DetailGridSummaryField = {
+                            id: `sum_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+                            label: currentList.length === 0 ? 'Grand Total' : 'Subtotal',
+                            sourceColumn: 'line_total',
+                            calculationType: 'SUM',
+                            format: 'currency',
+                            decimalPlaces: 2,
+                            prefix: '$',
+                          };
+                          onUpdateControl(selectedControl.id, {
+                            detailGridConfig: {
+                              detailTable: '',
+                              foreignKeyColumn: '',
+                              masterKeyColumn: 'id',
+                              columns: [],
+                              ...selectedControl.detailGridConfig,
+                              summaryFields: [...currentList, newField],
+                            },
+                          });
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          borderRadius: '4px',
+                          border: '1px dashed var(--brand-primary, #0067b8)',
+                          backgroundColor: 'var(--brand-primary-subtle, rgba(0,103,184,0.06))',
+                          color: 'var(--brand-primary, #0067b8)',
+                          cursor: 'pointer',
+                          marginTop: '4px',
+                        }}
+                      >
+                        <Plus size={13} /> Add Summary / Total Field
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

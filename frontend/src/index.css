@@ -1898,4 +1898,149 @@ textarea::placeholder,
   opacity: 1;
 }
 
+/* ==========================================================================
+   APEX FLOW FORM BUILDER: RESPONSIVE GRID & 3D ELEMENT STYLING
+   ========================================================================== */
+.apex-form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Base 12-Column Spans on Desktop */
+.apex-grid-col-1  { grid-column: span 1; }
+.apex-grid-col-2  { grid-column: span 2; }
+.apex-grid-col-3  { grid-column: span 3; }
+.apex-grid-col-4  { grid-column: span 4; }
+.apex-grid-col-5  { grid-column: span 5; }
+.apex-grid-col-6  { grid-column: span 6; }
+.apex-grid-col-7  { grid-column: span 7; }
+.apex-grid-col-8  { grid-column: span 8; }
+.apex-grid-col-9  { grid-column: span 9; }
+.apex-grid-col-10 { grid-column: span 10; }
+.apex-grid-col-11 { grid-column: span 11; }
+.apex-grid-col-12 { grid-column: span 12; }
+
+/* Responsive Tablet Reflow (<= 1024px): 6-column virtual grid, min-width clamp */
+@media (max-width: 1024px) {
+  .apex-form-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .apex-grid-col-1, .apex-grid-col-2 { grid-column: span 2 !important; }
+  .apex-grid-col-3, .apex-grid-col-4 { grid-column: span 3 !important; }
+  .apex-grid-col-5, .apex-grid-col-6, .apex-grid-col-7, .apex-grid-col-8,
+  .apex-grid-col-9, .apex-grid-col-10, .apex-grid-col-11, .apex-grid-col-12 {
+    grid-column: span 6 !important;
+  }
+}
+
+/* Responsive Mobile Reflow (<= 640px): 1-column stack */
+@media (max-width: 640px) {
+  .apex-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .apex-grid-col-1, .apex-grid-col-2, .apex-grid-col-3, .apex-grid-col-4,
+  .apex-grid-col-5, .apex-grid-col-6, .apex-grid-col-7, .apex-grid-col-8,
+  .apex-grid-col-9, .apex-grid-col-10, .apex-grid-col-11, .apex-grid-col-12 {
+    grid-column: span 1 !important;
+  }
+}
+
+/* Validation Error Animation on Enter Navigation Failure */
+@keyframes apexInputErrorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.form-input-error {
+  border-color: var(--status-danger, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+  animation: apexInputErrorShake 0.35s ease-in-out;
+}
+
+/* True Responsive Fullscreen Form Shell */
+.apex-fullscreen-form-shell {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.apex-fullscreen-form-canvas {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.apex-fullscreen-form-canvas .apex-form-canvas-container {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.apex-fullscreen-form-canvas .apex-form-grid {
+  flex: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Detail Grid Custom Scrollable Container & Sticky Headers */
+.apex-detail-grid-scroll-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default, #94a3b8) transparent;
+}
+
+.apex-detail-grid-scroll-wrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.apex-detail-grid-scroll-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.apex-detail-grid-scroll-wrapper::-webkit-scrollbar-thumb {
+  background-color: var(--border-default, #94a3b8);
+  border-radius: 4px;
+}
+
+.apex-detail-grid-scroll-wrapper thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  box-shadow: 0 1px 0 var(--border-default, #cbd5e1);
+}
+
+/* Summary / Totals Bar */
+.apex-detail-grid-totals-bar {
+  background-color: var(--surface-1, rgba(0, 0, 0, 0.02));
+  color: var(--text-primary);
+}
+
+.apex-summary-item {
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-default, #cbd5e1);
+}
+
 
